@@ -5,4 +5,5 @@ pymongo
 ipython
 matplotlib
 pyqt5
+pytest
 
