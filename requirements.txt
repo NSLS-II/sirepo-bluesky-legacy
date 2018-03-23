@@ -3,3 +3,6 @@ ophyd
 databroker
 pymongo
 ipython
+matplotlib
+pyqt5
+
