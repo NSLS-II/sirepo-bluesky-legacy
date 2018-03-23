@@ -1,3 +1,5 @@
+Purpose:
+----
 An attempt to integrate Sirepo/SRW simulations with Bluesky/Ophyd.
 
 Usage:
