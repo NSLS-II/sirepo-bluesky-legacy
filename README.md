@@ -5,6 +5,13 @@ An attempt to integrate Sirepo/SRW simulations with Bluesky/Ophyd.
 Usage:
 ----
 - make sure you have mongodb service running
+- create conda environment:
+```bash
+conda create -n srw_bluesky python=3.6
+conda activate
+pip install -r requirements.txt
+python -c "from ophyd.utils import make_dir_tree; make_dir_tree(2018, base_path='/tmp/data')"
+```
 - start ipython
 - `%run -i re_config.py`
 - `%run -i srw_detector.py`
