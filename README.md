@@ -4,7 +4,7 @@ An attempt to integrate Sirepo/SRW simulations with Bluesky/Ophyd.
 
 Usage:
 ----
-- make sure you have mongodb service running
+- make sure you have [mongodb](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/) is installed and the service is running
 - create conda environment:
 ```bash
 conda create -n srw_bluesky python=3.6
