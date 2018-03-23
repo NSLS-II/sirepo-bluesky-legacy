@@ -1,4 +1,5 @@
 bluesky
 ophyd
 databroker
-
+pymongo
+ipython
