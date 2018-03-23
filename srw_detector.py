@@ -92,4 +92,5 @@ class FakeSlits(Device):
 fs = FakeSlits(name='fs')
 srw_det = SRWDetector('srw_det', fs.xwidth, 'fs_xwidth',
                       fs.ywidth, 'fs_ywidth', reg=db.reg)
+srw_det.read_attrs = ['image', 'mean', 'photon_energy']
 

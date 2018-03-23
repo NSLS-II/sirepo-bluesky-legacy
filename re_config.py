@@ -18,9 +18,12 @@ RE = RunEngine({})
 bec = best_effort.BestEffortCallback()
 RE.subscribe(bec)
 
-db = Broker.named('local')
+# db = Broker.named('local')  # mongodb backend
+db = Broker.from_config(temp_config())  # temp sqlite backend
+
 RE.subscribe(db.insert)
 db.reg.register_handler('srw', SRWFileHandler, overwrite=True)
+
 try:
     databroker.assets.utils.install_sentinels(db.reg.config, version=1)
 except:
