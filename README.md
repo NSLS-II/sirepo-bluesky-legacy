@@ -24,3 +24,6 @@ hdr = db[-1]
 imgs = list(hdr.data('srw_det_image'))
 plt.imshow(imgs[31], aspect='equal')
 ```
+should return something like:
+
+![](images/sirepo_bluesky.png)
