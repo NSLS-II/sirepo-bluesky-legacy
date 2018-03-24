@@ -22,7 +22,9 @@ RE(bp.grid_scan([srw_det], fs.xwidth, 0, 1e-3, 10, fs.ywidth, 0, 1e-3, 10, True)
 ```py
 hdr = db[-1]
 imgs = list(hdr.data('srw_det_image'))
-plt.imshow(imgs[31], aspect='equal')
+hor_ext = cfg['{}_horizontal_extent'.format(srw_det.name)]
+vert_ext = cfg['{}_vertical_extent'.format(srw_det.name)]
+plt.imshow(imgs[31], aspect='equal', extent=(*hor_ext, *vert_ext))
 ```
 should return something like:
 
