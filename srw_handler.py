@@ -25,4 +25,3 @@ class SRWFileHandler:
     def __call__(self):
         d = read_srw_file(self._name)
         return d['data']
-

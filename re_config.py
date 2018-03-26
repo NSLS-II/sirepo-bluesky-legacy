@@ -18,17 +18,18 @@ RE = RunEngine({})
 bec = best_effort.BestEffortCallback()
 RE.subscribe(bec)
 
+# MongoDB backend:
 # db = Broker.named('local')  # mongodb backend
-db = Broker.from_config(temp_config())  # temp sqlite backend
+# try:
+#     databroker.assets.utils.install_sentinels(db.reg.config, version=1)
+# except:
+#     pass
+
+# Temp sqlite backend:
+db = Broker.from_config(temp_config())
 
 RE.subscribe(db.insert)
 db.reg.register_handler('srw', SRWFileHandler, overwrite=True)
 
-try:
-    databroker.assets.utils.install_sentinels(db.reg.config, version=1)
-except:
-    pass
-
 plt.ion()
 install_qt_kicker()
-

@@ -1,11 +1,10 @@
-import numpy as np
 import datetime
 from pathlib import Path
 
 from bluesky.tests.utils import _print_redirect
 
-from ophyd import Device, Signal, Component as Cpt, PseudoSingle
-from ophyd.sim import SynSignal, SynAxis, NullStatus, new_uid, short_uid
+from ophyd import Device, Signal, Component as Cpt
+from ophyd.sim import SynAxis, NullStatus, new_uid
 
 from srw_run import srw_run
 from srw_handler import read_srw_file
@@ -58,8 +57,8 @@ class SRWDetector(Device):
         datum_id = new_uid()
         date = datetime.datetime.now()
         srw_file = Path('/tmp/data') / Path(date.strftime('%Y/%m/%d')) / \
-                   Path('{}.dat'.format(datum_id))
-        with _print_redirect() as fout:
+            Path('{}.dat'.format(datum_id))
+        with _print_redirect():
             srw_run(str(srw_file), slit_x_width=x, slit_y_width=y)
             ret = read_srw_file(srw_file)
         self.image.put(datum_id)
@@ -94,4 +93,3 @@ srw_det = SRWDetector('srw_det', fs.xwidth, 'fs_xwidth',
                       fs.ywidth, 'fs_ywidth', reg=db.reg)
 srw_det.read_attrs = ['image', 'mean', 'photon_energy']
 srw_det.configuration_attrs = ['horizontal_extent', 'vertical_extent', 'shape']
-
