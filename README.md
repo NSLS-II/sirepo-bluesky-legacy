@@ -30,6 +30,5 @@ hor_ext = cfg['{}_horizontal_extent'.format(srw_det.name)]
 vert_ext = cfg['{}_vertical_extent'.format(srw_det.name)]
 plt.imshow(imgs[31], aspect='equal', extent=(*hor_ext, *vert_ext))
 ```
-should return something like:
-
+You should get something like:
 ![](images/sirepo_bluesky.png)
