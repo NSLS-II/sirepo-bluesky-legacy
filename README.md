@@ -4,7 +4,7 @@ An attempt to integrate Sirepo/SRW simulations with Bluesky/Ophyd.
 
 Usage:
 ----
-- make sure you have [mongodb](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/) is installed and the service is running
+- (OPTIONAL) make sure you have [mongodb](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/) installed and the service is running
 - create conda environment:
 ```bash
 conda create -n srw_bluesky python=3.6
@@ -18,6 +18,9 @@ python -c "from ophyd.utils import make_dir_tree; make_dir_tree(2018, base_path=
 %run -i srw_detector.py
 RE(bp.grid_scan([srw_det], fs.xwidth, 0, 1e-3, 10, fs.ywidth, 0, 1e-3, 10, True))
 ```
+You should get something like:
+![](images/sirepo_bluesky_grid.png)
+
 - get the data:
 ```py
 hdr = db[-1]
