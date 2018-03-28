@@ -10,8 +10,11 @@ from bluesky.utils import ProgressBarManager
 import databroker
 from databroker import Broker, temp_config
 
+from ophyd.utils import make_dir_tree
+
 from srw_handler import SRWFileHandler
 import matplotlib.pyplot as plt
+
 
 RE = RunEngine({})
 
@@ -33,3 +36,5 @@ db.reg.register_handler('srw', SRWFileHandler, overwrite=True)
 
 plt.ion()
 install_qt_kicker()
+
+_ = make_dir_tree(2018, base_path='/tmp/data')
