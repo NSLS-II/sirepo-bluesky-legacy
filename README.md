@@ -2,6 +2,8 @@ Purpose:
 ----
 An attempt to integrate Sirepo/SRW simulations with Bluesky/Ophyd.
 
+Based on this [Sirepo simulation](https://beta.sirepo.com/srw#/beamline/6JLvWbzP).
+
 Usage:
 ----
 - (OPTIONAL) make sure you have [mongodb](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/) installed and the service is running (see [local.yml](local.yml) for details)
