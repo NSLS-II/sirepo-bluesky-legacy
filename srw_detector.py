@@ -79,6 +79,7 @@ class SRWDetector(Device):
         return res
 
     def unstage(self):
+        super().unstage()
         self._resource_id = None
         self._result.clear()
 
