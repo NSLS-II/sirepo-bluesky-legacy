@@ -7,3 +7,4 @@ matplotlib
 pyqt5
 pytest
 flake8
+requests

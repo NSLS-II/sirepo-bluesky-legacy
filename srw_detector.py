@@ -8,6 +8,7 @@ from ophyd.sim import SynAxis, NullStatus, new_uid
 
 from srw_run import srw_run
 from srw_handler import read_srw_file
+from sirepo_bluesky import SirepoBluesky
 
 
 class SRWDetector(Device):
@@ -58,9 +59,24 @@ class SRWDetector(Device):
         date = datetime.datetime.now()
         srw_file = Path('/tmp/data') / Path(date.strftime('%Y/%m/%d')) / \
             Path('{}.dat'.format(datum_id))
-        with _print_redirect():
-            srw_run(str(srw_file), slit_x_width=x, slit_y_width=y)
-            ret = read_srw_file(srw_file)
+
+        # with _print_redirect():
+        #     srw_run(str(srw_file), slit_x_width=x, slit_y_width=y)
+        #     ret = read_srw_file(srw_file)
+
+        sim_id = 'BzmMF3rC'
+        sb = SirepoBluesky('http://localhost:8000')
+        data = sb.auth('srw', sim_id)
+        aperture = sb.find_element(data['models']['beamline'], 'title', 'Aperture')
+        aperture['horizontalSize'] = x * 1000
+        aperture['verticalSize'] = y * 1000
+        watch = sb.find_element(data['models']['beamline'], 'title', 'Watchpoint')
+        data['report'] = 'watchpointReport{}'.format(watch['id'])
+        sb.run_simulation()
+        with open(srw_file, 'wb') as f:
+            f.write(sb.get_datafile())
+        ret = read_srw_file(srw_file)
+
         self.image.put(datum_id)
         self.shape.put(ret['shape'])
         self.mean.put(ret['mean'])
