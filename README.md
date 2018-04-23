@@ -9,8 +9,10 @@ Usage:
 - (OPTIONAL) make sure you have [mongodb](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/) installed and the service is running (see [local.yml](local.yml) for details)
 - create conda environment:
 ```bash
-conda create -n srw_bluesky python=3.6
-conda activate
+git clone https://github.com/mrakitin/sirepo_bluesky/
+cd sirepo_bluesky/
+conda create -n sirepo_bluesky python=3.6 -y
+conda activate sirepo_bluesky
 pip install -r requirements.txt
 python -c "from ophyd.utils import make_dir_tree; make_dir_tree(2018, base_path='/tmp/data')"
 ```
