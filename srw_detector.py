@@ -30,7 +30,8 @@ class SRWDetector(Device):
     vertical_extent = Cpt(Signal)
 
     def __init__(self, name, motor0, field0, motor1, field1, reg=None,
-                 sim_id=None, **kwargs):
+                 sim_id=None, sirepo_server='http://10.10.10.10:8000',
+                 **kwargs):
         super().__init__(name=name, **kwargs)
         self.reg = reg
         self._motor0 = motor0
@@ -40,6 +41,7 @@ class SRWDetector(Device):
         self._resource_id = None
         self._result = {}
         self._sim_id = sim_id
+        self._sirepo_server = sirepo_server
         self._hints = None
         assert sim_id, 'Simulation ID must be provided. Currently it is set to {}'.format(sim_id)
 
@@ -67,7 +69,7 @@ class SRWDetector(Device):
         #     ret = read_srw_file(srw_file)
 
         sim_id = self._sim_id
-        sb = SirepoBluesky('http://localhost:8000')
+        sb = SirepoBluesky(self._sirepo_server)
         data = sb.auth('srw', sim_id)
         aperture = sb.find_element(data['models']['beamline'], 'title', 'Aperture')
         aperture['horizontalSize'] = x * 1000
@@ -110,6 +112,6 @@ class FakeSlits(Device):
 fs = FakeSlits(name='fs')
 srw_det = SRWDetector('srw_det', fs.xwidth, 'fs_xwidth',
                       fs.ywidth, 'fs_ywidth', reg=db.reg,
-                      sim_id='SgAsx7cR')
+                      sim_id='T0RuQPiL')
 srw_det.read_attrs = ['image', 'mean', 'photon_energy']
 srw_det.configuration_attrs = ['horizontal_extent', 'vertical_extent', 'shape']
