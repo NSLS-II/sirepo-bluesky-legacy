@@ -6,7 +6,6 @@ from bluesky.tests.utils import _print_redirect
 from ophyd import Device, Signal, Component as Cpt
 from ophyd.sim import SynAxis, NullStatus, new_uid
 
-from srw_run import srw_run
 from srw_handler import read_srw_file
 from sirepo_bluesky import SirepoBluesky
 
@@ -64,10 +63,6 @@ class SRWDetector(Device):
         srw_file = Path('/tmp/data') / Path(date.strftime('%Y/%m/%d')) / \
             Path('{}.dat'.format(datum_id))
 
-        # with _print_redirect():
-        #     srw_run(str(srw_file), slit_x_width=x, slit_y_width=y)
-        #     ret = read_srw_file(srw_file)
-
         sim_id = self._sim_id
         sb = SirepoBluesky(self._sirepo_server)
         data = sb.auth('srw', sim_id)
@@ -112,6 +107,6 @@ class FakeSlits(Device):
 fs = FakeSlits(name='fs')
 srw_det = SRWDetector('srw_det', fs.xwidth, 'fs_xwidth',
                       fs.ywidth, 'fs_ywidth', reg=db.reg,
-                      sim_id='<SIREPO-ID>')
+                      sim_id='IKROlKfR')
 srw_det.read_attrs = ['image', 'mean', 'photon_energy']
 srw_det.configuration_attrs = ['horizontal_extent', 'vertical_extent', 'shape']
