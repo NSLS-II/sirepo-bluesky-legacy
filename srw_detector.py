@@ -112,6 +112,6 @@ class FakeSlits(Device):
 fs = FakeSlits(name='fs')
 srw_det = SRWDetector('srw_det', fs.xwidth, 'fs_xwidth',
                       fs.ywidth, 'fs_ywidth', reg=db.reg,
-                      sim_id='T0RuQPiL')
+                      sim_id='<SIREPO-ID>')
 srw_det.read_attrs = ['image', 'mean', 'photon_energy']
 srw_det.configuration_attrs = ['horizontal_extent', 'vertical_extent', 'shape']
