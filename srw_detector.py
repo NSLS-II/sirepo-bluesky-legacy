@@ -6,6 +6,7 @@ from bluesky.tests.utils import _print_redirect
 from ophyd import Device, Signal, Component as Cpt
 from ophyd.sim import SynAxis, NullStatus, new_uid
 
+from srw_run import srw_run
 from srw_handler import read_srw_file
 from sirepo_bluesky import SirepoBluesky
 
@@ -28,11 +29,14 @@ class SRWDetector(Device):
     horizontal_extent = Cpt(Signal)
     vertical_extent = Cpt(Signal)
 
-    def __init__(self, name, motor0, field0, motor1, field1, reg=None,
+    def __init__(self, name, cname, spec_name1, spec_name2, motor0, field0, motor1=None, field1=None, reg=None,
                  sim_id=None, sirepo_server='http://10.10.10.10:8000',
                  **kwargs):
         super().__init__(name=name, **kwargs)
         self.reg = reg
+        self.cname = cname
+        self.spec_name1 = spec_name1
+        self.spec_name2 = spec_name2
         self._motor0 = motor0
         self._motor1 = motor1
         self._field0 = field0
@@ -63,14 +67,19 @@ class SRWDetector(Device):
         srw_file = Path('/tmp/data') / Path(date.strftime('%Y/%m/%d')) / \
             Path('{}.dat'.format(datum_id))
 
+        # with _print_redirect():
+        #     srw_run(str(srw_file), slit_x_width=x, slit_y_width=y)
+        #     ret = read_srw_file(srw_file)
+
         sim_id = self._sim_id
         sb = SirepoBluesky(self._sirepo_server)
         data = sb.auth('srw', sim_id)
-        aperture = sb.find_element(data['models']['beamline'], 'title', 'Aperture')
-        aperture['horizontalSize'] = x * 1000
-        aperture['verticalSize'] = y * 1000
-        watch = sb.find_element(data['models']['beamline'], 'title', 'Watchpoint')
-        data['report'] = 'watchpointReport{}'.format(watch['id'])
+        element = sb.find_element(data['models']['beamline'], 'title', self.cname)
+        element[self.spec_name1] = x * 1000
+        element[self.spec_name2] = y * 1000
+        component = sb.find_element(data['models']['beamline'], 'title', 'Watchpoint')
+        component[self._field0] = x
+        data['report'] = 'watchpointReport{}'.format(component['id'])
         sb.run_simulation()
         with open(srw_file, 'wb') as f:
             f.write(sb.get_datafile())
@@ -99,14 +108,87 @@ class SRWDetector(Device):
         self._result.clear()
 
 
-class FakeSlits(Device):
-    xwidth = Cpt(SynAxis, delay=0.01)
-    ywidth = Cpt(SynAxis, delay=0.02)
+class Component(Device):
+    x = Cpt(SynAxis, delay=0.01)
+    y = Cpt(SynAxis, delay=0.02)
+
+def get_dict_parameters(d):
+    non_parameters = ['title', 'shape', 'type', 'id']
+    parameters = []
+    for key in d:
+        if key not in non_parameters:
+            parameters.append(key)
+    print(f'SPECIFICATION:   {parameters} \n')
 
 
-fs = FakeSlits(name='fs')
-srw_det = SRWDetector('srw_det', fs.xwidth, 'fs_xwidth',
-                      fs.ywidth, 'fs_ywidth', reg=db.reg,
-                      sim_id='IKROlKfR')
+def get_options():
+    sb = SirepoBluesky('http://10.10.10.10:8000')
+    data = sb.auth('srw', '2WcDzSFx')
+    print("Tunable parameters for Bluesky scan: ")
+    for i in range(0, len(data['models']['beamline'])):
+        print('COMPONENT:        ' + data['models']['beamline'][i]['title'])
+        get_dict_parameters(data['models']['beamline'][i])
+
+
+import bluesky.preprocessors as bpp
+import bluesky.plan_stubs as bps
+import bluesky.plans as bp
+from bluesky.run_engine import RunEngine
+from bluesky.callbacks import best_effort
+from bluesky.simulators import summarize_plan
+from bluesky.utils import install_qt_kicker
+from bluesky.utils import ProgressBarManager
+
+import databroker
+from databroker import Broker, temp_config
+
+from ophyd.utils import make_dir_tree
+
+from srw_handler import SRWFileHandler
+import matplotlib.pyplot as plt
+
+
+RE = RunEngine({})
+
+bec = best_effort.BestEffortCallback()
+RE.subscribe(bec)
+
+# MongoDB backend:
+# db = Broker.named('local')  # mongodb backend
+# try:
+#     databroker.assets.utils.install_sentinels(db.reg.config, version=1)
+# except:
+#     pass
+
+# Temp sqlite backend:
+db = Broker.from_config(temp_config())
+
+RE.subscribe(db.insert)
+db.reg.register_handler('srw', SRWFileHandler, overwrite=True)
+
+plt.ion()
+install_qt_kicker()
+
+_ = make_dir_tree(2018, base_path='/tmp/data')
+
+get_options()
+component_id = input("Please select component: ")
+spec_id_one = input("Please select specification: ")
+spec_id_two = input("Please select another specification or press ENTER to only use one: ")
+
+
+c = Component(name='c')
+srw_det = SRWDetector(name='srw_det', cname=component_id, spec_name1=spec_id_one, spec_name2=spec_id_two, motor0=c.x, field0='c_x',
+                      motor1=c.y, field1='c_y', reg=db.reg,
+                      sim_id='UbZpABDl')
 srw_det.read_attrs = ['image', 'mean', 'photon_energy']
 srw_det.configuration_attrs = ['horizontal_extent', 'vertical_extent', 'shape']
+
+#Following comments are for testing purposes:
+
+#srw_det.stage()
+#srw_det.trigger()
+#srw_det.unstage()
+
+#RE(bp.grid_scan([srw_det], c.x, 0, 1e-3, 10, c.y, 0, 1e-3, 10, True))
+#RE((bp.scan([srw_det], c.x, 0, 1e-3, 10)))
