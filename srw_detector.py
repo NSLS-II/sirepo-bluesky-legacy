@@ -76,9 +76,12 @@ class SRWDetector(Device):
         element = sb.find_element(data['models']['beamline'], 'title', self.cname)
         element[self.spec_name1] = x * 1000
         element[self.spec_name2] = y * 1000
-        component = sb.find_element(data['models']['beamline'], 'title', 'Watchpoint')
-        component[self._field0] = x
-        data['report'] = 'watchpointReport{}'.format(component['id'])
+        try:
+            watch = sb.find_element(data['models']['beamline'], 'title', 'Watchpoint')
+        except:
+            watch = sb.find_element(data['models']['beamline'], 'title', 'Watchpoint')
+        watch[self._field0] = x
+        data['report'] = 'watchpointReport{}'.format(watch['id'])
         sb.run_simulation()
         with open(srw_file, 'wb') as f:
             f.write(sb.get_datafile())
