@@ -6,7 +6,6 @@ from bluesky.tests.utils import _print_redirect
 from ophyd import Device, Signal, Component as Cpt
 from ophyd.sim import SynAxis, NullStatus, new_uid
 
-from srw_run import srw_run
 from srw_handler import read_srw_file
 from sirepo_bluesky import SirepoBluesky
 
@@ -123,22 +122,23 @@ def get_dict_parameters(d):
 
 def get_options():
     sb = SirepoBluesky('http://10.10.10.10:8000')
-    data = sb.auth('srw', '2WcDzSFx')
+    data = sb.auth('srw', sim_id)
     print("Tunable parameters for Bluesky scan: ")
     for i in range(0, len(data['models']['beamline'])):
         print('COMPONENT:        ' + data['models']['beamline'][i]['title'])
         get_dict_parameters(data['models']['beamline'][i])
 
+sim_id = input('Please enter sim ID: ')
 get_options()
 component_id = input("Please select component: ")
 spec_id_one = input("Please select specification: ")
 spec_id_two = input("Please select another specification or press ENTER to only use one: ")
 
 
-c = Component(name='c')
-srw_det = SRWDetector(name='srw_det', cname=component_id, spec_name1=spec_id_one, spec_name2=spec_id_two, motor0=c.x, field0='c_x',
-                      motor1=c.y, field1='c_y', reg=db.reg,
-                      sim_id='UbZpABDl')
+c = Component(name=component_id)
+srw_det = SRWDetector(name='srw_det', cname=component_id, spec_name1=spec_id_one, spec_name2=spec_id_two, motor0=c.x, field0=component_id + '_x',
+                      motor1=c.y, field1=component_id + '_y', reg=db.reg,
+                      sim_id=sim_id)
 srw_det.read_attrs = ['image', 'mean', 'photon_energy']
 srw_det.configuration_attrs = ['horizontal_extent', 'vertical_extent', 'shape']
 
