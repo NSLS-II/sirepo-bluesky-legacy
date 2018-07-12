@@ -102,7 +102,6 @@ class SRWDetector(Device):
         self._resource_id = None
         self._result.clear()
 
-
 class Component(Device):
     x = Cpt(SynAxis, delay=0.01)
     y = Cpt(SynAxis, delay=0.02)
@@ -114,7 +113,6 @@ def get_dict_parameters(d):
         if key not in non_parameters:
             parameters.append(key)
     print(f'SPECIFICATION:   {parameters} \n')
-
 
 def get_options():
     sb = SirepoBluesky('http://10.10.10.10:8000')
@@ -130,19 +128,10 @@ component_id = input("Please select component: ")
 spec_id_one = input("Please select specification: ")
 spec_id_two = input("Please select another specification or press ENTER to only use one: ")
 
-
 c = Component(name=component_id)
-srw_det = SRWDetector(name='srw_det', cname=component_id, spec_name1=spec_id_one, spec_name2=spec_id_two, motor0=c.x, field0=component_id + '_x',
+srw_det = SRWDetector(name='srw_det', cname=component_id, spec_name1=spec_id_one,
+                      spec_name2=spec_id_two, motor0=c.x, field0=component_id + '_x',
                       motor1=c.y, field1=component_id + '_y', reg=db.reg,
                       sim_id=sim_id)
 srw_det.read_attrs = ['image', 'mean', 'photon_energy']
 srw_det.configuration_attrs = ['horizontal_extent', 'vertical_extent', 'shape']
-
-#Following comments are for testing purposes:
-
-#srw_det.stage()
-#srw_det.trigger()
-#srw_det.unstage()
-
-#RE(bp.grid_scan([srw_det], c.x, 0, 1e-3, 10, c.y, 0, 1e-3, 10, True))
-#RE((bp.scan([srw_det], c.x, 0, 1e-3, 10)))
