@@ -66,10 +66,6 @@ class SRWDetector(Device):
         srw_file = Path('/tmp/data') / Path(date.strftime('%Y/%m/%d')) / \
             Path('{}.dat'.format(datum_id))
 
-        # with _print_redirect():
-        #     srw_run(str(srw_file), slit_x_width=x, slit_y_width=y)
-        #     ret = read_srw_file(srw_file)
-
         sim_id = self._sim_id
         sb = SirepoBluesky(self._sirepo_server)
         data = sb.auth('srw', sim_id)
@@ -109,7 +105,6 @@ class SRWDetector(Device):
         self._resource_id = None
         self._result.clear()
 
-
 class Component(Device):
     x = Cpt(SynAxis, delay=0.01)
     y = Cpt(SynAxis, delay=0.02)
@@ -121,7 +116,6 @@ def get_dict_parameters(d):
         if key not in non_parameters:
             parameters.append(key)
     print(f'SPECIFICATION:   {parameters} \n')
-
 
 def get_options():
     sb = SirepoBluesky('http://10.10.10.10:8000')
@@ -137,9 +131,9 @@ component_id = input("Please select component: ")
 spec_id_one = input("Please select specification: ")
 spec_id_two = input("Please select another specification or press ENTER to only use one: ")
 
-
 c = Component(name=component_id)
-srw_det = SRWDetector(name='srw_det', cname=component_id, spec_name1=spec_id_one, spec_name2=spec_id_two, motor0=c.x, field0=component_id + '_x',
+srw_det = SRWDetector(name='srw_det', cname=component_id, spec_name1=spec_id_one,
+                      spec_name2=spec_id_two, motor0=c.x, field0=component_id + '_x',
                       motor1=c.y, field1=component_id + '_y', reg=db.reg,
                       sim_id=sim_id)
 srw_det.read_attrs = ['image', 'mean', 'photon_energy']
