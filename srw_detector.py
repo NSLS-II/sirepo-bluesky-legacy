@@ -66,10 +66,6 @@ class SRWDetector(Device):
         srw_file = Path('/tmp/data') / Path(date.strftime('%Y/%m/%d')) / \
             Path('{}.dat'.format(datum_id))
 
-        # with _print_redirect():
-        #     srw_run(str(srw_file), slit_x_width=x, slit_y_width=y)
-        #     ret = read_srw_file(srw_file)
-
         sim_id = self._sim_id
         sb = SirepoBluesky(self._sirepo_server)
         data = sb.auth('srw', sim_id)
