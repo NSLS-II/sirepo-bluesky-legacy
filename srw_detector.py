@@ -29,7 +29,7 @@ class SRWDetector(Device):
     vertical_extent = Cpt(Signal)
 
     def __init__(self, name, cname, spec_name1, spec_name2, motor0, field0, motor1=None, field1=None, reg=None,
-                 sim_id=None, sirepo_server='http://10.10.10.10:8000',
+                 sim_id=None, watch_id=None, sirepo_server='http://10.10.10.10:8000',
                  **kwargs):
         super().__init__(name=name, **kwargs)
         self.reg = reg
@@ -43,6 +43,7 @@ class SRWDetector(Device):
         self._resource_id = None
         self._result = {}
         self._sim_id = sim_id
+        self.watch_id = watch_id
         self._sirepo_server = sirepo_server
         self._hints = None
         assert sim_id, 'Simulation ID must be provided. Currently it is set to {}'.format(sim_id)
@@ -72,10 +73,7 @@ class SRWDetector(Device):
         element = sb.find_element(data['models']['beamline'], 'title', self.cname)
         element[self.spec_name1] = x * 1000
         element[self.spec_name2] = y * 1000
-        try:
-            watch = sb.find_element(data['models']['beamline'], 'title', 'Watchpoint')
-        except:
-            watch = sb.find_element(data['models']['beamline'], 'title', 'Watchpoint')
+        watch = sb.find_element(data['models']['beamline'], 'title', self.watch_id)
         watch[self._field0] = x
         data['report'] = 'watchpointReport{}'.format(watch['id'])
         sb.run_simulation()
@@ -120,22 +118,28 @@ def get_dict_parameters(d):
 def get_options():
     sb = SirepoBluesky('http://10.10.10.10:8000')
     data = sb.auth('srw', sim_id)
+    watchpoints = []
     print("Tunable parameters for Bluesky scan: ")
     for i in range(0, len(data['models']['beamline'])):
         print('COMPONENT:        ' + data['models']['beamline'][i]['title'])
         get_dict_parameters(data['models']['beamline'][i])
+        if data['models']['beamline'][i]['type'] == 'watch':
+            watchpoints.append(data['models']['beamline'][i]['title'] +
+            ', position: ' + str(data['models']['beamline'][i]['position']))
+    print(f'WATCHPOINTS:       {watchpoints}')
 
 sim_id = input('Please enter sim ID: ')
 get_options()
 component_id = input("Please select component: ")
 spec_id_one = input("Please select specification: ")
 spec_id_two = input("Please select another specification or press ENTER to only use one: ")
+watch_id = input("Please select watchpoint: ")
 
 c = Component(name=component_id)
 srw_det = SRWDetector(name='srw_det', cname=component_id, spec_name1=spec_id_one,
                       spec_name2=spec_id_two, motor0=c.x, field0=component_id + '_x',
                       motor1=c.y, field1=component_id + '_y', reg=db.reg,
-                      sim_id=sim_id)
+                      sim_id=sim_id, watch_id=watch_id)
 srw_det.read_attrs = ['image', 'mean', 'photon_energy']
 srw_det.configuration_attrs = ['horizontal_extent', 'vertical_extent', 'shape']
 
