@@ -1,3 +1,4 @@
+import sys
 import datetime
 from pathlib import Path
 
@@ -127,6 +128,9 @@ def get_options():
             watchpoints.append(data['models']['beamline'][i]['title'] +
             ', position: ' + str(data['models']['beamline'][i]['position']))
     print(f'WATCHPOINTS:       {watchpoints}')
+    if len(watchpoints) < 1:
+        print("No watchpoint found. This simulation will not work.")
+        sys.exit()
 
 sim_id = input('Please enter sim ID: ')
 get_options()
