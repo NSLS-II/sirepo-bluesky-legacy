@@ -90,13 +90,20 @@ class SRWDetector(Device):
         sim_id = self._sim_id
         sb = SirepoBluesky(self._sirepo_server)
         data = sb.auth('srw', sim_id)
+
+        #Get units we need to convert to
+        sb_data = sb.get_datafile().decode("utf-8")[200:300]
+        start = sb_data.find('[')
+        end = sb_data.find(']')
+        final_units = sb_data[start + 1:end]
+
         element = sb.find_element(data['models']['beamline'], 'title', self.optic_name)
         element[self.param0] = x * 1000
         element[self.param1] = y * 1000
         watch = sb.find_element(data['models']['beamline'], 'title', self.watch_name)
-        watch[self._field0] = x
         data['report'] = 'watchpointReport{}'.format(watch['id'])
         sb.run_simulation()
+        
         with open(srw_file, 'wb') as f:
             f.write(sb.get_datafile())
         ret = read_srw_file(srw_file)
