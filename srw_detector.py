@@ -100,7 +100,7 @@ class SRWDetector(Device):
         with open(srw_file, 'wb') as f:
             f.write(sb.get_datafile())
         ret = read_srw_file(srw_file)
-         self.image.put(datum_id)
+        self.image.put(datum_id)
         self.shape.put(ret['shape'])
         self.mean.put(ret['mean'])
         self.photon_energy.put(ret['photon_energy'])
