@@ -140,7 +140,7 @@ def get_dict_parameters(d):
     for key in d:
         if key not in non_parameters:
             parameters.append(key)
-            print(f'PARAMETERS:        {parameters} \n')
+    print(f'PARAMETERS:        {parameters} \n')
 
 def get_options():
     sb = SirepoBluesky('http://10.10.10.10:8000')
