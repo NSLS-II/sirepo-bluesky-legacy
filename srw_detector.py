@@ -145,14 +145,14 @@ def get_dict_parameters(d):
 def get_options():
     sb = SirepoBluesky('http://10.10.10.10:8000')
     data = sb.auth('srw', sim_id)
-    watchpoints = []
+    watchpoints = {}
     print("Tunable parameters for Bluesky scan: ")
     for i in range(0, len(data['models']['beamline'])):
         print('OPTICAL ELEMENT:    ' + data['models']['beamline'][i]['title'])
         get_dict_parameters(data['models']['beamline'][i])
         if data['models']['beamline'][i]['type'] == 'watch':
-            watchpoints.append(data['models']['beamline'][i]['title'] +
-            ', position: ' + str(data['models']['beamline'][i]['position']))
+            watchpoints[data['models']['beamline'][i]['title']] = \
+            str(data['models']['beamline'][i]['position'])
     print(f'WATCHPOINTS:       {watchpoints}')
     if len(watchpoints) < 1:
         raise ValueError('No watchpoints found. This simulation will not work')
