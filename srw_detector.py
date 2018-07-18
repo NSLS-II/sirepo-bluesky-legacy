@@ -132,7 +132,7 @@ class Positioner(Device):
 
 
 if __name__ == "__main__":
-    
+
     sim_id = input("Please enter sim ID: ")
 
     sb = SirepoBluesky('http://10.10.10.10:8000')
@@ -187,10 +187,10 @@ if __name__ == "__main__":
     srw_det.configuration_attrs = ['horizontal_extent', 'vertical_extent',
                                    'shape']
 
-    RE(bp.grid_scan([srw_det],
-                    getattr(sirepo_component, f'sirepo_{field0}'), 0, 1e-3, 10,
-                    getattr(sirepo_component, f'sirepo_{field1}'), 0, 1e-3, 10,
-                    True))
+    #RE(bp.grid_scan([srw_det],
+                    #getattr(sirepo_component, f'sirepo_{field0}'), 0, 1e-3, 10,
+                    #getattr(sirepo_component, f'sirepo_{field1}'), 0, 1e-3, 10,
+                    #True))
 
 
 
