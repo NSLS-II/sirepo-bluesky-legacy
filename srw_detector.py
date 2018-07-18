@@ -88,14 +88,17 @@ class SRWDetector(Device):
         data = sb.auth('srw', sim_id)
 
         # Get units we need to convert to
-        sb_data = sb.get_datafile()
+        #sb_data = sb.get_datafile()
         # start = sb_data.find('[')
         # end = sb_data.find(']')
         # final_units = sb_data[start + 1:end]
 
         element = sb.find_element(data['models']['beamline'], 'title', self.sirepo_component.name)
-        element[self.field0] = x * 1000
-        element[self.field1] = y * 1000
+        print(element)
+        real_field0 = self.field0.replace('sirepo_','')
+        real_field1 = self.field1.replace('sirepo_', '')
+        element[real_field0] = x * 1000
+        element[real_field1] = y * 1000
         watch = sb.find_element(data['models']['beamline'], 'title', self.watch_name)
         data['report'] = 'watchpointReport{}'.format(watch['id'])
         sb.run_simulation()
