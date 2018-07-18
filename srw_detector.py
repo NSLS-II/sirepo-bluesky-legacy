@@ -25,12 +25,12 @@ class SRWDetector(Device):
         The first Ophyd component being controlled in Bluesky scan
     field0 : str
         The name corresponding to motor0 that is shown as axis in Bluesky scan
+    param1 : str
+        The name of the second parameter of the optic being changed
     motor1 :
         The second Ophyd component being controlled in Bluesky scan
     field1 : str
         The name corresponding to motor1 that is shown as axis in Bluesky scan
-    param1 : str
-        The name of the second parameter of the optic being changed
     reg : Databroker register
     sim_id : str
         The simulation id corresponding to the Sirepo simulation being run on
@@ -48,18 +48,14 @@ class SRWDetector(Device):
     horizontal_extent = Cpt(Signal)
     vertical_extent = Cpt(Signal)
 
-    def __init__(self, name, optic_name, param0, motor0, field0, motor1=None, field1=None, param1=None, reg=None,
+    def __init__(self, name, sirepo_component, field0, field1=None, reg=None,
                  sim_id=None, watch_name=None, sirepo_server='http://10.10.10.10:8000',
                  **kwargs):
         super().__init__(name=name, **kwargs)
         self.reg = reg
-        self.optic_name = optic_name
-        self.param0 = param0
-        self.param1 = param1
-        self._motor0 = motor0
-        self._motor1 = motor1
-        self._field0 = field0
-        self._field1 = field1
+        self.sirepo_component = sirepo_component
+        self.field0 = field0
+        self.field1 = field1
         self._resource_id = None
         self._result = {}
         self._sim_id = sim_id
@@ -80,8 +76,8 @@ class SRWDetector(Device):
 
     def trigger(self):
         super().trigger()
-        x = self._motor0.read()[self._field0]['value']
-        y = self._motor1.read()[self._field1]['value']
+        x = getattr(self.sirepo_component, self.field0).read()[f'{self.sirepo_component.name}_{self.field0}']['value']
+        y = getattr(self.sirepo_component, self.field1).read()[f'{self.sirepo_component.name}_{self.field1}']['value']
         datum_id = new_uid()
         date = datetime.datetime.now()
         srw_file = Path('/tmp/data') / Path(date.strftime('%Y/%m/%d')) / \
@@ -91,15 +87,15 @@ class SRWDetector(Device):
         sb = SirepoBluesky(self._sirepo_server)
         data = sb.auth('srw', sim_id)
 
-        #Get units we need to convert to
-        sb_data = sb.get_datafile().decode("utf-8")[200:300]
-        start = sb_data.find('[')
-        end = sb_data.find(']')
-        final_units = sb_data[start + 1:end]
+        # Get units we need to convert to
+        sb_data = sb.get_datafile()
+        # start = sb_data.find('[')
+        # end = sb_data.find(']')
+        # final_units = sb_data[start + 1:end]
 
-        element = sb.find_element(data['models']['beamline'], 'title', self.optic_name)
-        element[self.param0] = x * 1000
-        element[self.param1] = y * 1000
+        element = sb.find_element(data['models']['beamline'], 'title', self.sirepo_component.name)
+        element[self.field0] = x * 1000
+        element[self.field1] = y * 1000
         watch = sb.find_element(data['models']['beamline'], 'title', self.watch_name)
         data['report'] = 'watchpointReport{}'.format(watch['id'])
         sb.run_simulation()
@@ -130,44 +126,112 @@ class SRWDetector(Device):
         self._result.clear()
 
 
-class Component(Device):
-    x = Cpt(SynAxis, delay=0.01)
-    y = Cpt(SynAxis, delay=0.02)
+class Positioner(Device):
+    x = Cpt(SynAxis)
+    y = Cpt(SynAxis)
 
-def get_dict_parameters(d):
-    non_parameters = ['title', 'shape', 'type', 'id']
-    parameters = []
-    for key in d:
-        if key not in non_parameters:
-            parameters.append(key)
-    print(f'PARAMETERS:        {parameters} \n')
 
-def get_options():
+if __name__ == "__main__":
+    import bluesky.preprocessors as bpp
+    import bluesky.plan_stubs as bps
+    import bluesky.plans as bp
+    from bluesky.run_engine import RunEngine
+    from bluesky.callbacks import best_effort
+    from bluesky.simulators import summarize_plan
+    from bluesky.utils import install_qt_kicker
+    from bluesky.utils import ProgressBarManager
+
+    import databroker
+    from databroker import Broker, temp_config
+
+    from ophyd.utils import make_dir_tree
+
+    from srw_handler import SRWFileHandler
+    import matplotlib.pyplot as plt
+
+    RE = RunEngine({})
+
+    bec = best_effort.BestEffortCallback()
+    RE.subscribe(bec)
+
+    # MongoDB backend:
+    # db = Broker.named('local')  # mongodb backend
+    # try:
+    #     databroker.assets.utils.install_sentinels(db.reg.config, version=1)
+    # except:
+    #     pass
+
+    # Temp sqlite backend:
+    db = Broker.from_config(temp_config())
+
+    RE.subscribe(db.insert)
+    db.reg.register_handler('srw', SRWFileHandler, overwrite=True)
+
+    plt.ion()
+    install_qt_kicker()
+
+    _ = make_dir_tree(2018, base_path='/tmp/data')
+
+    sim_id = input("Please enter sim ID: ")
+
     sb = SirepoBluesky('http://10.10.10.10:8000')
     data = sb.auth('srw', sim_id)
     watchpoints = {}
     print("Tunable parameters for Bluesky scan: ")
-    for i in range(0, len(data['models']['beamline'])):
+
+    non_parameters = ('title', 'type', 'id')
+
+    for i in range(len(data['models']['beamline'])):
         print('OPTICAL ELEMENT:    ' + data['models']['beamline'][i]['title'])
-        get_dict_parameters(data['models']['beamline'][i])
+        parameters = []
+        for key in data['models']['beamline'][i]:
+            if key not in non_parameters:
+                parameters.append(key)
+        print(f'PARAMETERS:        {parameters} \n')
         if data['models']['beamline'][i]['type'] == 'watch':
             watchpoints[data['models']['beamline'][i]['title']] = \
-            str(data['models']['beamline'][i]['position'])
+                str(data['models']['beamline'][i]['position'])
     print(f'WATCHPOINTS:       {watchpoints}')
     if len(watchpoints) < 1:
         raise ValueError('No watchpoints found. This simulation will not work')
 
-sim_id = input("Please enter sim ID: ")
-get_options()
-optic_id = input("Please select optical element: ")
-param0 = input("Please select parameter: ")
-param1 = input("Please select another parameter or press ENTER to only use one: ")
-watch_name = input("Please select watchpoint: ")
+    optic_name = input("Please select optical element: ")
 
-c = Component(name=optic_id)
-srw_det = SRWDetector(name='srw_det', optic_name=optic_id, param0=param0,
-                      param1=param1, motor0=c.x, field0=optic_id + '_x',
-                      motor1=c.y, field1=optic_id + '_y', reg=db.reg,
-                      sim_id=sim_id, watch_name=watch_name)
-srw_det.read_attrs = ['image', 'mean', 'photon_energy']
-srw_det.configuration_attrs = ['horizontal_extent', 'vertical_extent', 'shape']
+    def find_optic_id_by_name(optic_name):
+        for i in range(len(data['models']['beamline'])):
+            if data['models']['beamline'][i]['title'] == optic_name:
+                return i
+        raise ValueError(f'Not valid optic {optic_name}')
+
+    field0 = input("Please select parameter: ")
+    field1 = input("Please select another parameter or press ENTER to only use one: ")
+    watch_name = input("Please select watchpoint: ")
+
+    # First define a factory
+    optic_id = find_optic_id_by_name(optic_name)
+    schema = {f'sirepo_{k}': v for k, v in data['models']['beamline'][optic_id].items()}
+              #if k not in non_parameters}
+    def class_factory(cls_name):
+        dd = {k: Cpt(SynAxis) for k in schema}
+        return type(cls_name, (Device,), dd)
+
+    SirepoComponent = class_factory('SirepoComponent')
+    sirepo_component = SirepoComponent(name=optic_name)
+
+    srw_det = SRWDetector(name='srw_det', sirepo_component=sirepo_component,
+                          field0=f'sirepo_{field0}',
+                          field1=f'sirepo_{field1}',
+                          reg=db.reg, sim_id=sim_id, watch_name=watch_name)
+    srw_det.read_attrs = ['image', 'mean', 'photon_energy']
+    srw_det.configuration_attrs = ['horizontal_extent', 'vertical_extent',
+                                   'shape']
+
+    RE(bp.grid_scan([srw_det],
+                    getattr(sirepo_component, f'sirepo_{field0}'), 0, 1e-3, 10,
+                    getattr(sirepo_component, f'sirepo_{field1}'), 0, 1e-3, 10,
+                    True))
+
+
+
+
+
