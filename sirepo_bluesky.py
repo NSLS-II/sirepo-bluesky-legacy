@@ -44,6 +44,7 @@ class SirepoBluesky(object):
         assert 'status' in res and res['status'] == 'OK', 'bluesky_auth failed: {}'.format(res)
         self.sim_type = sim_type
         self.sim_id = sim_id
+        self.res = res
         self.data = res['data']
         return self.data
 
