@@ -14,7 +14,7 @@ class SirepoBluesky(object):
     --------
     sim_id = '1tNWph0M'
     sb = SirepoBluesky('http://localhost:8000')
-    data = sb.auth('srw', sim_id)
+    data, schema = sb.auth('srw', sim_id)
     # update the model values and choose the report
     data['models']['undulator']['verticalAmplitude'] = 0.95
     data['report'] = 'trajectoryReport'
@@ -44,9 +44,9 @@ class SirepoBluesky(object):
         assert 'state' in res and res['state'] == 'ok', 'bluesky_auth failed: {}'.format(res)
         self.sim_type = sim_type
         self.sim_id = sim_id
-        self.res = res
+        self.schema = res['schema']
         self.data = res['data']
-        return self.data
+        return self.data, self.schema
 
     @staticmethod
     def find_element(elements, field, value):

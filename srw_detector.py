@@ -1,15 +1,15 @@
 import datetime
 from pathlib import Path
 
-from bluesky.tests.utils import _print_redirect
+import unyt as u
 
+from bluesky.tests.utils import _print_redirect
 from ophyd import Device, Signal, Component as Cpt
 from ophyd.sim import SynAxis, NullStatus, new_uid
 
 from srw_handler import read_srw_file
 from sirepo_bluesky import SirepoBluesky
 
-import unyt as u
 
 class SRWDetector(Device):
     """
@@ -91,7 +91,7 @@ class SRWDetector(Device):
 
         sim_id = self._sim_id
         sb = SirepoBluesky(self._sirepo_server)
-        data = sb.auth('srw', sim_id)
+        data, schema = sb.auth('srw', sim_id)
 
         element = sb.find_element(data['models']['beamline'], 'title', self.sirepo_component.name)
         print(element)
@@ -154,7 +154,7 @@ if __name__ == "__main__":
 
     sim_id = input("Please enter sim ID: ")
     sb = SirepoBluesky('http://10.10.10.10:8000')
-    data = sb.auth('srw', sim_id)
+    data, schema = sb.auth('srw', sim_id)
     watchpoints = {}
     print("Tunable parameters for Bluesky scan: ")
 
@@ -235,8 +235,4 @@ if __name__ == "__main__":
 
     # Watchpoint scan
     #RE(bp.rel_scan([srw_det], getattr(sirepo_component, field0), -.1, .1, 11))
-
-
-
-
 
