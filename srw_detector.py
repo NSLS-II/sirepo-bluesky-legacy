@@ -154,7 +154,7 @@ if __name__ == "__main__":
 
     sim_id = input("Please enter sim ID: ")
     sb = SirepoBluesky('http://10.10.10.10:8000')
-    data, schema = sb.auth('srw', sim_id)
+    data, sirepo_schema = sb.auth('srw', sim_id)
     watchpoints = {}
     print("Tunable parameters for Bluesky scan: ")
 
@@ -186,16 +186,16 @@ if __name__ == "__main__":
 
     field0 = input("Please select parameter: ")
     if optic_name != watch_name:
-        field0_units = sb.res['schema']['model'][optic_name.lower()][field0][0].split('[')[1].split(']')[0]
+        field0_units = sb.schema['model'][optic_name.lower()][field0][0].split('[')[1].split(']')[0]
     else:
-        field0_units = sb.res['schema']['model']['watch'][field0][0].split('[')[1].split(']')[0]
+        field0_units = sb.schema['model']['watch'][field0][0].split('[')[1].split(']')[0]
     print(field0_units)
     field0 = f'sirepo_{field0}'
 
     field1 = input("Please select another parameter or press ENTER to only use one: ")
     field1_units = None
     if field1 is not '':
-        field1_units = sb.res['schema']['model'][optic_name.lower()][field1][0].split('[')[1].split(']')[0]
+        field1_units = sb.schema['model'][optic_name.lower()][field1][0].split('[')[1].split(']')[0]
         print(field1_units)
         field1 = f'sirepo_{field1}'
     else:
