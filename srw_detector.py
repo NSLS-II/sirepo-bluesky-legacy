@@ -30,7 +30,7 @@ class SRWDetector(Device):
         The name of the second parameter of the component being changed
     field1_units : str
         The Sirepo units for field1 that must be converted to before scan
-    reg : Databroker register
+    reg : Databroker registry
     sim_id : str
         The simulation id corresponding to the Sirepo simulation being run on
         local server
@@ -48,7 +48,7 @@ class SRWDetector(Device):
     vertical_extent = Cpt(Signal)
 
     def __init__(self, name, sirepo_component=None, field0=None, field0_units=None, field1=None,
-                 field1_units=None, reg=None, sim_id=None, watch_name=None,
+                 field1_units=None, reg=None, sim_id=None, watch_name=None, sirepo_server='http://10.10.10.10:8000',
                  **kwargs):
         super().__init__(name=name, **kwargs)
         self.reg = reg
@@ -64,6 +64,7 @@ class SRWDetector(Device):
         self.sb = None
         self.data = None
         self._hints = None
+        self.sirepo_server = sirepo_server
         assert sim_id, 'Simulation ID must be provided. Currently it is set to {}'.format(sim_id)
         self.connect(sim_id=self._sim_id)
 
@@ -143,7 +144,7 @@ class SRWDetector(Device):
         raise ValueError(f'Not valid optic {optic_name}')
 
     def connect(self, sim_id):
-        sb = SirepoBluesky('http://10.10.10.10:8000')
+        sb = SirepoBluesky(self.sirepo_server)
         data, sirepo_schema = sb.auth('srw', sim_id)
         self.data = data
         self.sb = sb
@@ -151,15 +152,12 @@ class SRWDetector(Device):
         watchpoints = {}
         print("Tunable parameters for Bluesky scan: ")
 
-        non_parameters = ('title', 'type', 'id')
-
         for i in range(len(data['models']['beamline'])):
             print('OPTICAL ELEMENT:    ' + data['models']['beamline'][i][
                 'title'])
             parameters = []
             for key in data['models']['beamline'][i]:
-                if key not in non_parameters:
-                    parameters.append(key)
+                parameters.append(key)
             print(f'PARAMETERS:        {parameters} \n')
             if data['models']['beamline'][i]['type'] == 'watch':
                 watchpoints[data['models']['beamline'][i]['title']] = \
@@ -201,7 +199,6 @@ class SRWDetector(Device):
         schema = {f'sirepo_{k}': v for k, v in
                   data['models']['beamline'][optic_id].items()}
 
-        # if k not in non_parameters}
         def class_factory(cls_name):
             dd = {k: Cpt(SynAxis) for k in schema}
             return type(cls_name, (Device,), dd)
@@ -241,6 +238,7 @@ if __name__ == "__main__":
     sirepo_det.read_attrs = ['image', 'mean', 'photon_energy']
     sirepo_det.configuration_attrs = ['horizontal_extent', 'vertical_extent',
                                    'shape']
+
     # Grid scan
     #RE(bp.grid_scan([sirepo_det],
                     #getattr(sirepo_component, field0), 0, 1e-3, 10,
