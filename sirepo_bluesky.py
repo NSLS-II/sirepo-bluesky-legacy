@@ -14,7 +14,7 @@ class SirepoBluesky(object):
     --------
     sim_id = '1tNWph0M'
     sb = SirepoBluesky('http://localhost:8000')
-    data = sb.auth('srw', sim_id)
+    data, schema = sb.auth('srw', sim_id)
     # update the model values and choose the report
     data['models']['undulator']['verticalAmplitude'] = 0.95
     data['report'] = 'trajectoryReport'
@@ -36,16 +36,45 @@ class SirepoBluesky(object):
 
     def auth(self, sim_type, sim_id):
         """ Connect to the server and returns the data for the simulation identified by sim_id. """
+        #from pykern import pkconfig
+       # pkconfig.reset_state_for_testing({'SIREPO_BLUESKY_AUTH_SECRET' : 'secret'})
+
+        #from pykern import pkcollections
+        #import random
+        #import bluesky
+        #from sirepo import bluesky
+       # import numconv
+        #import hashlib
+       # import base64
+
+       # req = pkcollections.Dict(simulationType=sim_type, simulationID=sim_id)
+       # r = random.SystemRandom()
+        #req['authNonce'] = str(int(time.time())) + '-' + ''.join(
+       #     r.choice(numconv.BASE62) for x in range(32)
+       # )
+       # h = hashlib.sha256()
+       # h.update(
+       #     ':'.join([
+       #         req['authNonce'],
+       #         req['simulationType'],
+       #         req['simulationId'],
+       #         bluesky.cfg.auth_secret,
+       #     ]),
+       # )
+       # req['authHash'] = 'v1:' + base64.urlsafe_b64encode(h.digest())
+       # bluesky.auth_hash(req, verify=True)
+
         self.cookies = None
         res = self._post_json('bluesky-auth', {
             'simulationType': sim_type,
             'simulationId': sim_id,
         })
-        assert 'status' in res and res['status'] == 'OK', 'bluesky_auth failed: {}'.format(res)
+        assert 'state' in res and res['state'] == 'ok', 'bluesky_auth failed: {}'.format(res)
         self.sim_type = sim_type
         self.sim_id = sim_id
+        self.schema = res['schema']
         self.data = res['data']
-        return self.data
+        return self.data, self.schema
 
     @staticmethod
     def find_element(elements, field, value):
