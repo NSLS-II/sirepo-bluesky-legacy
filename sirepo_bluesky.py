@@ -41,7 +41,7 @@ class SirepoBluesky(object):
     - 'bluesky' is the secret key in this case
 
     """
-    
+
     def __init__(self, server, secret='bluesky'):
         self.server = server
         self.secret = secret

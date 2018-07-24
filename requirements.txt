@@ -3,6 +3,7 @@ databroker
 flake8
 ipython
 matplotlib
+numconv
 ophyd
 pymongo
 pyqt5
