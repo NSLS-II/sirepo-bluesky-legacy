@@ -3,8 +3,8 @@ import time
 import random
 import numconv
 import hashlib
-from pykern import pkcollections
 import base64
+
 
 class SirepoBluesky(object):
     """
@@ -91,10 +91,6 @@ class SirepoBluesky(object):
 
     def auth(self, sim_type, sim_id):
         """ Connect to the server and returns the data for the simulation identified by sim_id. """
-        from pykern import pkconfig
-        pkconfig.reset_state_for_testing({'SIREPO_BLUESKY_AUTH_SECRET' : 'secret'})
-
-
         req = dict(simulationType=sim_type, simulationId=sim_id)
         r = random.SystemRandom()
         req['authNonce'] = str(int(time.time())) + '-' + ''.join(r.choice
@@ -107,10 +103,7 @@ class SirepoBluesky(object):
         self.auth_hash(req, verify=True)
 
         self.cookies = None
-        res = self._post_json('bluesky-auth', {
-            'simulationType': sim_type,
-            'simulationId': sim_id,
-        })
+        res = self._post_json('bluesky-auth', req)
         assert 'state' in res and res['state'] == 'ok', 'bluesky_auth failed: {}'.format(res)
         self.sim_type = sim_type
         self.sim_id = sim_id
