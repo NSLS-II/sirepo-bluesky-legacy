@@ -35,13 +35,13 @@ conda create -n sirepo_bluesky python=3.6 -y
 conda activate sirepo_bluesky
 pip install -r requirements.txt
 ```
-- edit the `srw_detector.py` file to update the UID used for Bluesky-submitted
+- edit the `sirepo_detector.py` file to update the UID used for Bluesky-submitted
   simulations
 - start ipython and run the following:
 ```ipython
 %run -i re_config.py
-%run -i srw_detector.py
-RE(bp.grid_scan([srw_det], fs.xwidth, 0, 1e-3, 10, fs.ywidth, 0, 1e-3, 10, True))
+%run -i sirepo_detector.py
+RE(bp.grid_scan([sirepo_det], fs.xwidth, 0, 1e-3, 10, fs.ywidth, 0, 1e-3, 10, True))
 ```
 You should get something like:
 
@@ -50,10 +50,10 @@ You should get something like:
 - get the data:
 ```py
 hdr = db[-1]
-imgs = list(hdr.data('srw_det_image'))
-cfg = hdr.config_data('srw_det')['primary'][0]
-hor_ext = cfg['{}_horizontal_extent'.format(srw_det.name)]
-vert_ext = cfg['{}_vertical_extent'.format(srw_det.name)]
+imgs = list(hdr.data('sirepo_det_image'))
+cfg = hdr.config_data('sirepo_det')['primary'][0]
+hor_ext = cfg['{}_horizontal_extent'.format(sirepo_det.name)]
+vert_ext = cfg['{}_vertical_extent'.format(sirepo_det.name)]
 plt.imshow(imgs[31], aspect='equal', extent=(*hor_ext, *vert_ext))
 ```
 You should get something like:
