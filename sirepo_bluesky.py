@@ -35,59 +35,16 @@ class SirepoBluesky(object):
     sb.run_simulation()
     f2 = sb.get_datafile()
 
+    Start Sirepo Server
+    -------------------
+    $ SIREPO_BLUESKY_AUTH_SECRET=bluesky sirepo service http
+    - 'bluesky' is the secret key in this case
+
     """
+    
     def __init__(self, server, secret='bluesky'):
         self.server = server
         self.secret = secret
-
-    def auth_hash(self, req, verify=False):
-        _AUTH_HASH_SEPARATOR = ':'
-        _AUTH_NONCE_CHARS = numconv.BASE62
-        _AUTH_NONCE_UNIQUE_LEN = 32
-        _AUTH_NONCE_SEPARATOR = '-'
-        _AUTH_NONCE_REPLAY_SECS = 10
-
-        now = int(time.time())
-        if not 'authNonce' in req:
-            if verify:
-                raise ValueError('authNonce: missing field in request')
-            r = random.SystemRandom()
-            req['authNonce'] = str(now) + _AUTH_NONCE_SEPARATOR + ''.join(
-                r.choice(_AUTH_NONCE_CHARS) for x in
-                range(_AUTH_NONCE_UNIQUE_LEN)
-            )
-        h = hashlib.sha256()
-        h.update(
-            _AUTH_HASH_SEPARATOR.join([
-                req['authNonce'],
-                req['simulationType'],
-                req['simulationId'],
-                self.secret,
-            ]).encode())
-        res = 'v1:' + base64.urlsafe_b64encode(h.digest()).decode()
-        if not verify:
-            req['authHash'] = res
-            return
-        if res != req['authHash']:
-            raise ValueError(
-                '{}: hash mismatch expected={} nonce={}'.format(req['authHash'],
-                res, req['authNonce']),
-
-            )
-        t = req['authNonce'].split(_AUTH_NONCE_SEPARATOR)[0]
-        try:
-            t = int(t)
-        except ValueError as e:
-            raise ValueError(
-                '{}: auth_nonce prefix not an int: nonce={}'.format(t,
-                req['authNonce']),
-            )
-        delta = now - t
-        if abs(delta) > _AUTH_NONCE_REPLAY_SECS:
-            raise ValueError(
-                '{}: auth_nonce time outside replay window={} now={} nonce={}'.
-                    format(t,_AUTH_NONCE_REPLAY_SECS, now, req['authNonce']),
-            )
 
     def auth(self, sim_type, sim_id):
         """ Connect to the server and returns the data for the simulation identified by sim_id. """
@@ -98,9 +55,7 @@ class SirepoBluesky(object):
         h = hashlib.sha256()
         h.update(':'.join([req['authNonce'], req['simulationType'],
                            req['simulationId'], self.secret]).encode())
-
         req['authHash'] = 'v1:' + base64.urlsafe_b64encode(h.digest()).decode()
-        self.auth_hash(req, verify=True)
 
         self.cookies = None
         res = self._post_json('bluesky-auth', req)
