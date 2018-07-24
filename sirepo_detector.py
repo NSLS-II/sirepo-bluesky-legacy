@@ -11,7 +11,7 @@ from srw_handler import read_srw_file
 from sirepo_bluesky import SirepoBluesky
 
 
-class SRWDetector(Device):
+class SirepoDetector(Device):
     """
     Use SRW code based on the value of the motor.
 
@@ -229,7 +229,7 @@ class SRWDetector(Device):
 if __name__ == "__main__":
 
     sim_id = input("Please enter sim ID: ")
-    sirepo_det = SRWDetector(name='sirepo_det', sim_id=sim_id, reg=db.reg)
+    sirepo_det = SirepoDetector(name='sirepo_det', sim_id=sim_id, reg=db.reg)
 
     sirepo_component = sirepo_det.get_sirepo_component()
     field0 = sirepo_det.get_field0()
@@ -249,5 +249,5 @@ if __name__ == "__main__":
     #RE(bp.scan([sirepo_det], getattr(sirepo_component, field0), 0, 1e-3, 10))
 
     # Watchpoint scan
-    #RE(bp.rel_scan([srw_det], getattr(sirepo_component, field0), -.1, .1, 11))
+    #RE(bp.rel_scan([sirepo_det], getattr(sirepo_component, field0), -.1, .1, 11))
 
