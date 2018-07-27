@@ -236,7 +236,6 @@ class SirepoDetector(Device):
                 self.sirepo_component = sirepo_component
 
         self.sirepo_components = sirepo_components
-        print(sirepo_components)
 
         if field0 is not '':
             self.field0 = field0
@@ -248,7 +247,6 @@ class SirepoDetector(Device):
 
         self.watch_name = watch_name
 
-        #self.update_parameters()
     def get_sirepo_component(self):
         return self.sirepo_component
 
