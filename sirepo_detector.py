@@ -51,7 +51,7 @@ class SirepoDetector(Device):
 
     def __init__(self, name, sirepo_component=None, field0=None, field0_units=None, field1=None,
                  field1_units=None, reg=None, sim_id=None, watch_name=None, sirepo_server='http://10.10.10.10:8000',
-                 **kwargs):
+                 source_simulation=False,**kwargs):
         super().__init__(name=name, **kwargs)
         self.reg = reg
         self.sirepo_component = sirepo_component
@@ -68,7 +68,12 @@ class SirepoDetector(Device):
         self._hints = None
         self.sirepo_server = sirepo_server
         self.parameters = None
+        self.source_parameters = None
         self.sirepo_components = None
+        self.source_component = None
+        self.source_simulation = source_simulation
+        self.one_d_reports = ['intensityReport']
+        self.two_d_reports = ['watchpointReport']
         assert sim_id, 'Simulation ID must be provided. Currently it is set to {}'.format(sim_id)
         self.connect(sim_id=self._sim_id)
 
@@ -100,36 +105,47 @@ class SirepoDetector(Device):
 
     def trigger(self):
         super().trigger()
-        if self.field1 is not None:
-            x = getattr(self.sirepo_component, self.field0).read()[f'{self.sirepo_component.name}_{self.field0}']['value']
-        if self.field1 is not None:
-            y = getattr(self.sirepo_component, self.field1).read()[f'{self.sirepo_component.name}_{self.field1}']['value']
+
         datum_id = new_uid()
         date = datetime.datetime.now()
         srw_file = Path('/tmp/data') / Path(date.strftime('%Y/%m/%d')) / \
-            Path('{}.dat'.format(datum_id))
+                   Path('{}.dat'.format(datum_id))
 
-        element = self.sb.find_element(self.data['models']['beamline'], 'title', self.sirepo_component.name)
-        if self.field0 is not None:
-            real_field0 = self.field0.replace('sirepo_','')
-        if self.field1 is not None:
-            real_field1 = self.field1.replace('sirepo_', '')
+        if not self.source_simulation:
+            if self.field1 is not None:
+                x = getattr(self.sirepo_component, self.field0).read()[f'{self.sirepo_component.name}_{self.field0}']['value']
+            if self.field1 is not None:
+                y = getattr(self.sirepo_component, self.field1).read()[f'{self.sirepo_component.name}_{self.field1}']['value']
 
-        if self.field0 is not None:
-            #element[real_field0] = float(self.update_value(x, self.field0_units).value)
-            element[real_field0] = x
+            element = self.sb.find_element(self.data['models']['beamline'], 'title', self.sirepo_component.name)
+            if self.field0 is not None:
+                real_field0 = self.field0.replace('sirepo_','')
+            if self.field1 is not None:
+                real_field1 = self.field1.replace('sirepo_', '')
 
-        if self.field1 is not None:
-            #element[real_field1] = float(self.update_value(y, self.field1_units).value)
-            element[real_field1] = y
+            if self.field0 is not None:
+                #element[real_field0] = float(self.update_value(x, self.field0_units).value)
+                element[real_field0] = x
 
-        watch = self.sb.find_element(self.data['models']['beamline'], 'title', self.watch_name)
-        self.data['report'] = 'watchpointReport{}'.format(watch['id'])
+            if self.field1 is not None:
+                #element[real_field1] = float(self.update_value(y, self.field1_units).value)
+                element[real_field1] = y
+
+            watch = self.sb.find_element(self.data['models']['beamline'], 'title', self.watch_name)
+            self.data['report'] = 'watchpointReport{}'.format(watch['id'])
+        else:
+            self.data['report'] = "intensityReport"
         self.sb.run_simulation()
-        
+
         with open(srw_file, 'wb') as f:
             f.write(self.sb.get_datafile())
-        ret = read_srw_file(srw_file)
+
+        if self.data['report'] in self.one_d_reports:
+            ndim = 1
+        else:
+            ndim = 2
+        ret = read_srw_file(srw_file, ndim=ndim)
+
         self.image.put(datum_id)
         self.shape.put(ret['shape'])
         self.mean.put(ret['mean'])
@@ -163,89 +179,104 @@ class SirepoDetector(Device):
         data, sirepo_schema = sb.auth('srw', sim_id)
         self.data = data
         self.sb = sb
-
         watchpoints = {}
-        print("Tunable parameters for Bluesky scan: ")
+        if not self.source_simulation:
+            print("Tunable parameters for Bluesky scan: ")
+            for i in range(len(data['models']['beamline'])):
+                print('OPTICAL ELEMENT:    ' + data['models']['beamline'][i][
+                    'title'])
+                parameters = []
+                for key in data['models']['beamline'][i]:
+                    parameters.append(key)
+                print(f'PARAMETERS:        {parameters} \n')
+                if data['models']['beamline'][i]['type'] == 'watch':
+                    watchpoints[data['models']['beamline'][i]['title']] = \
+                        str(data['models']['beamline'][i]['position'])
+            print(f'WATCHPOINTS:       {watchpoints}')
+            if len(watchpoints) < 1:
+                raise ValueError(
+                    'No watchpoints found. This simulation will not work')
 
-        for i in range(len(data['models']['beamline'])):
-            print('OPTICAL ELEMENT:    ' + data['models']['beamline'][i][
-                'title'])
-            parameters = []
-            for key in data['models']['beamline'][i]:
-                parameters.append(key)
-            print(f'PARAMETERS:        {parameters} \n')
-            if data['models']['beamline'][i]['type'] == 'watch':
-                watchpoints[data['models']['beamline'][i]['title']] = \
-                    str(data['models']['beamline'][i]['position'])
-        print(f'WATCHPOINTS:       {watchpoints}')
-        if len(watchpoints) < 1:
-            raise ValueError(
-                'No watchpoints found. This simulation will not work')
+            optic_name = input("Please select optical element: ")
+            watch_name = input("Please select watchpoint: ")
 
-        optic_name = input("Please select optical element: ")
-        watch_name = input("Please select watchpoint: ")
+            field0 = input("Please select parameter: ")
+            if optic_name != watch_name:
+                if field0 is not '':
+                    field0_units = \
+                    sb.schema['model'][optic_name.lower()][field0][0].split('[')[
+                        1].split(']')[0]
+                    field0 = f'sirepo_{field0}'
+            else:
+                if field0 is not '':
+                    field0_units = \
+                    sb.schema['model']['watch'][field0][0].split('[')[1].split(']')[0]
+                    field0 = f'sirepo_{field0}'
 
-        field0 = input("Please select parameter: ")
-        if optic_name != watch_name:
-            if field0 is not '':
-                field0_units = \
-                sb.schema['model'][optic_name.lower()][field0][0].split('[')[
+            field1 = input(
+                "Please select another parameter or press ENTER to only use one: ")
+            field1_units = None
+            if field1 is not '':
+                field1_units = \
+                sb.schema['model'][optic_name.lower()][field1][0].split('[')[
                     1].split(']')[0]
-                field0 = f'sirepo_{field0}'
-        else:
+                field1 = f'sirepo_{field1}'
+            else:
+                field1 = None
+
+            def class_factory(cls_name):
+                dd = {k: Cpt(SynAxis) for k in self.parameters}
+                return type(cls_name, (Device,), dd)
+
+            sirepo_components = {}
+
+            # Create sirepo component for each optical element, set active element
+            # to the one selected by the user
+            for i in range(len(data['models']['beamline'])):
+                optic = (data['models']['beamline'][i]['title'])
+                optic_id = self.find_optic_id_by_name(optic, data)
+
+                self.parameters = {f'sirepo_{k}': v for k, v in
+                          data['models']['beamline'][optic_id].items()}
+
+                SirepoComponent = class_factory('SirepoComponent')
+                sirepo_component = SirepoComponent(name=optic)
+
+                for k, v in self.parameters.items():
+                    getattr(sirepo_component, k).set(v)
+
+                sirepo_components[sirepo_component.name] = sirepo_component
+
+                if (optic_name == sirepo_component.name):
+                    self.sirepo_component = sirepo_component
+
+            self.sirepo_components = sirepo_components
+
             if field0 is not '':
-                field0_units = \
-                sb.schema['model']['watch'][field0][0].split('[')[1].split(']')[0]
-                field0 = f'sirepo_{field0}'
+                self.field0 = field0
+                self.field0_units = field0_units
 
-        field1 = input(
-            "Please select another parameter or press ENTER to only use one: ")
-        field1_units = None
-        if field1 is not '':
-            field1_units = \
-            sb.schema['model'][optic_name.lower()][field1][0].split('[')[
-                1].split(']')[0]
-            field1 = f'sirepo_{field1}'
+            if field1 is not '':
+                self.field1 = field1
+                self.field1_units = field1_units
+
+            self.watch_name = watch_name
+
         else:
-            field1 = None
+            # Create source components
+            self.source_parameters = {f'sirepo_intensityReport_{k}': v for k, v in
+                          data['models']['intensityReport'].items()}
+            def source_class_factory(cls_name):
+                dd = {k: Cpt(SynAxis) for k in self.source_parameters}
+                return type(cls_name, (Device,), dd)
 
-        def class_factory(cls_name):
-            dd = {k: Cpt(SynAxis) for k in self.parameters}
-            return type(cls_name, (Device,), dd)
+            SirepoComponent = source_class_factory('SirepoComponent')
+            self.source_component = SirepoComponent(name='intensityReport')
 
-        sirepo_components = {}
 
-        # Create sirepo component for each optical element, set active element
-        # to the one selected by the user
-        for i in range(len(data['models']['beamline'])):
-            optic = (data['models']['beamline'][i]['title'])
-            optic_id = self.find_optic_id_by_name(optic, data)
+            for k, v in self.source_parameters.items():
+                getattr(self.source_component, k).set(v)
 
-            self.parameters = {f'sirepo_{k}': v for k, v in
-                      data['models']['beamline'][optic_id].items()}
-
-            SirepoComponent = class_factory('SirepoComponent')
-            sirepo_component = SirepoComponent(name=optic)
-
-            for k, v in self.parameters.items():
-                getattr(sirepo_component, k).set(v)
-
-            sirepo_components[sirepo_component.name] = sirepo_component
-
-            if (optic_name == sirepo_component.name):
-                self.sirepo_component = sirepo_component
-
-        self.sirepo_components = sirepo_components
-
-        if field0 is not '':
-            self.field0 = field0
-            self.field0_units = field0_units
-
-        if field1 is not '':
-            self.field1 = field1
-            self.field1_units = field1_units
-
-        self.watch_name = watch_name
 
     def get_sirepo_component(self):
         return self.sirepo_component
@@ -259,7 +290,7 @@ class SirepoDetector(Device):
 
 if __name__ == "__main__":
 
-    sim_id = '6l2R4NK5'  # input("Please enter sim ID: ")
+    sim_id = input("Please enter sim ID: ")
     sirepo_det = SirepoDetector(name='sirepo_det', sim_id=sim_id, reg=db.reg)
 
     sirepo_component = sirepo_det.get_sirepo_component()
