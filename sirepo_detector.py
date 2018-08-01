@@ -153,7 +153,7 @@ class SirepoDetector(Device):
         self.horizontal_extent.put(ret['horizontal_extent'])
         self.vertical_extent.put(ret['vertical_extent'])
 
-        self._resource_id = self.reg.insert_resource('srw', srw_file, {})
+        self._resource_id = self.reg.insert_resource('srw', srw_file, {'ndim': ndim})
         self.reg.insert_datum(self._resource_id, datum_id, {})
 
         return NullStatus()
@@ -292,6 +292,7 @@ if __name__ == "__main__":
 
     sim_id = input("Please enter sim ID: ")
     sirepo_det = SirepoDetector(name='sirepo_det', sim_id=sim_id, reg=db.reg)
+    sirepo_det = SirepoDetector(name='sirepo_det', sim_id=sim_id, reg=db.reg, source_simulation=True)
 
     sirepo_component = sirepo_det.get_sirepo_component()
     field0 = sirepo_det.get_field0()

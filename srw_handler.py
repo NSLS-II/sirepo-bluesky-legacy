@@ -21,9 +21,10 @@ def read_srw_file(filename, ndim=2):
 class SRWFileHandler:
     specs = {'srw'}
 
-    def __init__(self, filename):
+    def __init__(self, filename, ndim=2):
         self._name = filename
+        self._ndim = ndim
 
     def __call__(self):
-        d = read_srw_file(self._name)
+        d = read_srw_file(self._name, ndim=self._ndim)
         return d['data']
