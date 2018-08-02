@@ -38,7 +38,7 @@ pip install -r requirements.txt
 - edit the `sirepo_detector.py` file to update the UID used for Bluesky-submitted
   simulations
 - start ipython and run the following:
-```ipython
+```py
  % run -i re_config.py
  import sirepo_detector as sd
  sirepo_det = sd.SirepoDetector(sim_id='qyQ4yILz', reg=db.reg)
@@ -50,7 +50,7 @@ pip install -r requirements.txt
                                    'vertical_extent',
                                    'shape']
  ```
- ```
+ ```py
  RE(bp.grid_scan([sirepo_det],
                     param1, 0, 1, 10,
                     param2, 0, 1, 10,
@@ -94,7 +94,7 @@ You should get something like:
 
 To view single-electron spectrum report: 
 
-```
+```py
 % run -i re_config.py
 import sirepo_detector as sd
 sirepo_det = sd.SirepoDetector(sim_id='8GJJWLFh', reg=db.reg, source_simulation=True)
@@ -103,10 +103,10 @@ sirepo_det.configuration_attrs = ['horizontal_extent',
                                   'vertical_extent',
                                   'shape']
 ```
-```
+```py
 RE(bp.count([sirepo_det]))
 ```
-```
+```py
 hdr = db[-1]
 imgs = list(hdr.data('sirepo_det_image'))
 plt.plot(imgs[-1])
