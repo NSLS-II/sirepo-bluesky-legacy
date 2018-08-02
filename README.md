@@ -35,8 +35,6 @@ conda create -n sirepo_bluesky python=3.6 -y
 conda activate sirepo_bluesky
 pip install -r requirements.txt
 ```
-- edit the `sirepo_detector.py` file to update the UID used for Bluesky-submitted
-  simulations
 - start ipython and run the following:
 ```py
  % run -i re_config.py
