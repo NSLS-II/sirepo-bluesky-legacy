@@ -111,3 +111,7 @@ hdr = db[-1]
 imgs = list(hdr.data('sirepo_det_image'))
 plt.plot(imgs[-1])
 ```
+You should get something like: 
+
+<img src="images/Spectrum.png" width=50%>
+
