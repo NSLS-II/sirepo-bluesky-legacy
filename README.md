@@ -39,8 +39,22 @@ pip install -r requirements.txt
   simulations
 - start ipython and run the following:
 ```ipython
-%run -i re_config.py
-%run -i sirepo_detector.py
+ % run -i re_config.py
+ import sirepo_detector as sd
+ sirepo_det = sd.SirepoDetector(sim_id='qyQ4yILz', reg=db.reg)
+ sirepo_det.select_optic('Aperture')
+ param1 = sirepo_det.create_parameter('horizontalSize')
+ param2 = sirepo_det.create_parameter('verticalSize')
+ sirepo_det.read_attrs = ['image', 'mean', 'photon_energy']
+ sirepo_det.configuration_attrs = ['horizontal_extent',
+                                   'vertical_extent',
+                                   'shape']
+ ```
+ ```
+ RE(bp.grid_scan([sirepo_det],
+                    param1, 0, 1, 10,
+                    param2, 0, 1, 10,
+                    True))
 ```
 
 In the interactive input prompt enter the following:
@@ -76,3 +90,24 @@ plt.imshow(imgs[31], aspect='equal', extent=(*hor_ext, *vert_ext))
 You should get something like:
 
 ![](images/sirepo_bluesky.png)
+
+
+To view single-electron spectrum report: 
+
+```
+% run -i re_config.py
+import sirepo_detector as sd
+sirepo_det = sd.SirepoDetector(sim_id='8GJJWLFh', reg=db.reg, source_simulation=True)
+sirepo_det.read_attrs = ['image', 'mean', 'photon_energy']
+sirepo_det.configuration_attrs = ['horizontal_extent',
+                                  'vertical_extent',
+                                  'shape']
+```
+```
+RE(bp.count([sirepo_det]))
+```
+```
+hdr = db[-1]
+imgs = list(hdr.data('sirepo_det_image'))
+plt.plot(imgs[-1])
+```
