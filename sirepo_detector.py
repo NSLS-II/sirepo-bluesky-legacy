@@ -259,7 +259,7 @@ class SirepoDetector(Device):
 
 if __name__ == "__main__":
 
-    sim_id = input("Please enter sim ID: ")
+    sim_id = '6l2R4NK5'  # input("Please enter sim ID: ")
     sirepo_det = SirepoDetector(name='sirepo_det', sim_id=sim_id, reg=db.reg)
 
     sirepo_component = sirepo_det.get_sirepo_component()
@@ -268,17 +268,17 @@ if __name__ == "__main__":
 
     sirepo_det.read_attrs = ['image', 'mean', 'photon_energy']
     sirepo_det.configuration_attrs = ['horizontal_extent', 'vertical_extent',
-                                   'shape']
+                                      'shape']
 
     # Grid scan
-    #RE(bp.grid_scan([sirepo_det],
-                    #getattr(sirepo_component, field0), 0, 1e-3, 10,
-                    #getattr(sirepo_component, field1), 0, 1e-3, 10,
-                    #True))
+    RE(bp.grid_scan([sirepo_det],
+                    getattr(sirepo_component, field0), 0, 1, 10,  # units are as in Sirepo ("mm" in this case)
+                    getattr(sirepo_component, field1), 0, 1, 10,  # same
+                    False))  # no snake trajectory
     # 1D scan
-    #RE(bps.mov(getattr(sirepo_component, field1), 1e-3))
-    #RE(bp.scan([sirepo_det], getattr(sirepo_component, field0), 0, 1e-3, 10))
+    # RE(bps.mov(getattr(sirepo_component, field1), 1))
+    # RE(bp.scan([sirepo_det], getattr(sirepo_component, field0), 0, 1, 10))
 
     # Watchpoint scan
-    #RE(bp.rel_scan([sirepo_det], getattr(sirepo_component, field0), -.1, .1, 11))
+    # RE(bp.rel_scan([sirepo_det], getattr(sirepo_component, field0), -.1, .1, 11))
 

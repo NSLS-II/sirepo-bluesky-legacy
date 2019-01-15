@@ -14,7 +14,7 @@ Prepare local Sirepo server:
   it with `vagrant ssh`
 - run the following command to start Sirepo with the Bluesky interface (`bluesky` is a secret used on both server and client sides):
 ```
-SIREPO_BLUESKY_AUTH_SECRET=bluesky sirepo service http
+SIREPO_FEATURE_CONFIG_API_MODULES=bluesky SIREPO_BLUESKY_AUTH_SECRET=bluesky sirepo service http
 ```
 - in your browser, go to http://10.10.10.10:8000/srw, click the ":cloud: Import"
   button in the right-upper corner and upload the [archive](https://github.com/mrakitin/sirepo_bluesky/blob/master/basic.zip)
@@ -29,8 +29,8 @@ Prepare Bluesky and trigger a simulated Sirepo detector:
 - (OPTIONAL) make sure you have [mongodb](https://docs.mongodb.com/manual/tutorial/install-mongodb-on-os-x/) installed and the service is running (see [local.yml](local.yml) for details)
 - create conda environment:
 ```bash
-git clone https://github.com/mrakitin/sirepo_bluesky/
-cd sirepo_bluesky/
+git clone https://github.com/NSLS-II/sirepo-bluesky/
+cd sirepo-bluesky/
 conda create -n sirepo_bluesky python=3.6 -y
 conda activate sirepo_bluesky
 pip install -r requirements.txt
@@ -41,8 +41,25 @@ pip install -r requirements.txt
 ```ipython
 %run -i re_config.py
 %run -i sirepo_detector.py
-RE(bp.grid_scan([sirepo_det], fs.xwidth, 0, 1e-3, 10, fs.ywidth, 0, 1e-3, 10, True))
 ```
+
+In the interactive input prompt enter the following:
+```
+In [5]: %run -i sirepo_detector.py
+Tunable parameters for Bluesky scan:
+OPTICAL ELEMENT:    Aperture
+PARAMETERS:        ['verticalOffset', 'horizontalSize', 'title', 'verticalSize', 'horizontalOffset', 'shape', 'position', 'type', 'id']
+
+OPTICAL ELEMENT:    Watchpoint
+PARAMETERS:        ['position', 'type', 'id', 'title']
+
+WATCHPOINTS:       {'Watchpoint': '21'}
+Please select optical element: Aperture
+Please select watchpoint: Watchpoint
+Please select parameter: horizontalSize
+Please select another parameter or press ENTER to only use one: verticalSize
+```
+
 You should get something like:
 
 ![](images/sirepo_bluesky_grid.png)

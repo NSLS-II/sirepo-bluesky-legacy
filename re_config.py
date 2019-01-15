@@ -1,3 +1,5 @@
+import datetime
+
 import bluesky.preprocessors as bpp
 import bluesky.plan_stubs as bps
 import bluesky.plans as bp
@@ -37,4 +39,4 @@ db.reg.register_handler('srw', SRWFileHandler, overwrite=True)
 plt.ion()
 install_qt_kicker()
 
-_ = make_dir_tree(2018, base_path='/tmp/data')
+_ = make_dir_tree(datetime.datetime.now().year, base_path='/tmp/data')
