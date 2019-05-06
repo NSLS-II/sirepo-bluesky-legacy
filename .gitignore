@@ -99,5 +99,8 @@ ENV/
 # mypy
 .mypy_cache/
 
-#user defined 
+# user defined
 .idea/
+
+# sirepo-related:
+db/
