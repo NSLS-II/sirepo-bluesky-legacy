@@ -12,9 +12,9 @@ Prepare local Sirepo server:
   [Vagrant](https://www.vagrantup.com/))
 - after the successful installation start the VM with `vagrant up` and ssh to
   it with `vagrant ssh`
-- run the following command to start Sirepo with the Bluesky interface (`bluesky` is a secret used on both server and client sides):
+- run the following command to start Sirepo with the Bluesky interface (`bluesky` is a "secret" key used on both server and client sides, and the `SIREPO_FEATURE_CONFIG_SIM_TYPES=srw` part is optional if you run Sirepo directly on a Linux/Mac machine and only have SRW installed):
 ```
-SIREPO_FEATURE_CONFIG_API_MODULES=bluesky SIREPO_BLUESKY_AUTH_SECRET=bluesky sirepo service http
+SIREPO_FEATURE_CONFIG_SIM_TYPES=srw SIREPO_AUTH_METHODS=bluesky:guest SIREPO_AUTH_BLUESKY_SECRET=bluesky sirepo service http
 ```
 - in your browser, go to http://10.10.10.10:8000/srw, click the ":cloud: Import"
   button in the right-upper corner and upload the [archive](https://github.com/mrakitin/sirepo_bluesky/blob/master/basic.zip)
