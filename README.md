@@ -68,7 +68,7 @@ imgs = list(hdr.data('sirepo_det_image'))
 cfg = hdr.config_data('sirepo_det')['primary'][0]
 hor_ext = cfg['{}_horizontal_extent'.format(sirepo_det.name)]
 vert_ext = cfg['{}_vertical_extent'.format(sirepo_det.name)]
-plt.imshow(imgs[31], aspect='equal', extent=(*hor_ext, *vert_ext))
+plt.imshow(imgs[21], aspect='equal', extent=(*hor_ext, *vert_ext))
 ```
 You should get something like:
 
