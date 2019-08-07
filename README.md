@@ -16,6 +16,7 @@ Prepare local Sirepo server:
 ```
 SIREPO_FEATURE_CONFIG_SIM_TYPES=srw SIREPO_AUTH_METHODS=bluesky:guest SIREPO_AUTH_BLUESKY_SECRET=bluesky sirepo service http
 ```
+
 - in your browser, go to http://10.10.10.10:8000/srw, click the ":cloud: Import"
   button in the right-upper corner and upload the [archive](https://github.com/mrakitin/sirepo_bluesky/blob/master/basic.zip)
   with the simulation stored in this repo
@@ -35,34 +36,30 @@ conda create -n sirepo_bluesky python=3.6 -y
 conda activate sirepo_bluesky
 pip install -r requirements.txt
 ```
-- edit the `sirepo_detector.py` file to update the UID used for Bluesky-submitted
-  simulations
-- start ipython and run the following:
-```ipython
-%run -i re_config.py
-%run -i sirepo_detector.py
+- start `ipython` and run the following:
+```py
+% run -i re_config.py
+import sirepo_detector as sd
+sirepo_det = sd.SirepoDetector(sim_id='qyQ4yILz', reg=db.reg)
+sirepo_det.select_optic('Aperture')
+param1 = sirepo_det.create_parameter('horizontalSize')
+param2 = sirepo_det.create_parameter('verticalSize')
+sirepo_det.read_attrs = ['image', 'mean', 'photon_energy']
+sirepo_det.configuration_attrs = ['horizontal_extent',
+                                  'vertical_extent',
+                                  'shape']
 ```
 
-In the interactive input prompt enter the following:
-```
-In [5]: %run -i sirepo_detector.py
-Tunable parameters for Bluesky scan:
-OPTICAL ELEMENT:    Aperture
-PARAMETERS:        ['verticalOffset', 'horizontalSize', 'title', 'verticalSize', 'horizontalOffset', 'shape', 'position', 'type', 'id']
-
-OPTICAL ELEMENT:    Watchpoint
-PARAMETERS:        ['position', 'type', 'id', 'title']
-
-WATCHPOINTS:       {'Watchpoint': '21'}
-Please select optical element: Aperture
-Please select watchpoint: Watchpoint
-Please select parameter: horizontalSize
-Please select another parameter or press ENTER to only use one: verticalSize
+```py
+RE(bp.grid_scan([sirepo_det],
+                param1, 0, 1, 10,
+                param2, 0, 1, 10,
+                True))
 ```
 
 You should get something like:
 
-![](images/sirepo_bluesky_grid.png)
+<img src="images/sirepo_bluesky_grid.png" width="400">
 
 - get the data:
 ```py
@@ -71,8 +68,35 @@ imgs = list(hdr.data('sirepo_det_image'))
 cfg = hdr.config_data('sirepo_det')['primary'][0]
 hor_ext = cfg['{}_horizontal_extent'.format(sirepo_det.name)]
 vert_ext = cfg['{}_vertical_extent'.format(sirepo_det.name)]
-plt.imshow(imgs[31], aspect='equal', extent=(*hor_ext, *vert_ext))
+plt.imshow(imgs[21], aspect='equal', extent=(*hor_ext, *vert_ext))
 ```
 You should get something like:
 
-![](images/sirepo_bluesky.png)
+<img src="images/sirepo_bluesky.png" width="400">
+
+To view single-electron spectrum report
+(**Hint:** use a different `sim_id`, e.g. for the NSLS-II CHX beamline example): 
+
+```py
+% run -i re_config.py
+import sirepo_detector as sd
+sirepo_det = sd.SirepoDetector(sim_id='8GJJWLFh', reg=db.reg, source_simulation=True)
+sirepo_det.read_attrs = ['image', 'mean', 'photon_energy']
+sirepo_det.configuration_attrs = ['horizontal_extent',
+                                  'vertical_extent',
+                                  'shape']
+```
+
+```py
+RE(bp.count([sirepo_det]))
+```
+
+```py
+hdr = db[-1]
+imgs = list(hdr.data('sirepo_det_image'))
+plt.plot(imgs[-1])
+```
+You should get something like: 
+
+<img src="images/spectrum.png" width="400">
+

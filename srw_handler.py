@@ -2,9 +2,11 @@ import numpy as np
 import uti_plot_com as srw_io
 
 
-def read_srw_file(filename):
+def read_srw_file(filename, ndim=2):
     data, mode, ranges, labels, units = srw_io.file_load(filename)
-    data = np.array(data).reshape((ranges[8], ranges[5]), order='C')
+    data = np.array(data)
+    if ndim == 2:
+        data = data.reshape((ranges[8], ranges[5]), order='C')
     return {'data': data,
             'shape': data.shape,
             'mean': np.mean(data),
@@ -19,9 +21,10 @@ def read_srw_file(filename):
 class SRWFileHandler:
     specs = {'srw'}
 
-    def __init__(self, filename):
+    def __init__(self, filename, ndim=2):
         self._name = filename
+        self._ndim = ndim
 
     def __call__(self):
-        d = read_srw_file(self._name)
+        d = read_srw_file(self._name, ndim=self._ndim)
         return d['data']
