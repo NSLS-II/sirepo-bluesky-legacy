@@ -72,7 +72,7 @@ plt.imshow(imgs[31], aspect='equal', extent=(*hor_ext, *vert_ext))
 ```
 You should get something like:
 
-<img src="images/sirepo_bluesky.png" width=50%>
+<img src="images/sirepo_bluesky.png" width="400px">
 
 To view single-electron spectrum report: 
 
@@ -97,5 +97,5 @@ plt.plot(imgs[-1])
 ```
 You should get something like: 
 
-<img src="images/spectrum.png" width=50%>
+<img src="images/spectrum.png" width="400px">
 
