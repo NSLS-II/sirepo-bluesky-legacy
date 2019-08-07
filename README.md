@@ -59,7 +59,7 @@ RE(bp.grid_scan([sirepo_det],
 
 You should get something like:
 
-![](images/sirepo_bluesky_grid.png)
+<img src="images/sirepo_bluesky_grid.png" width="400">
 
 - get the data:
 ```py
@@ -72,9 +72,10 @@ plt.imshow(imgs[21], aspect='equal', extent=(*hor_ext, *vert_ext))
 ```
 You should get something like:
 
-<img src="images/sirepo_bluesky.png" width="400px">
+<img src="images/sirepo_bluesky.png" width="400">
 
-To view single-electron spectrum report: 
+To view single-electron spectrum report
+(**Hint:** use a different `sim_id`, e.g. for the NSLS-II CHX beamline example): 
 
 ```py
 % run -i re_config.py
@@ -97,5 +98,5 @@ plt.plot(imgs[-1])
 ```
 You should get something like: 
 
-<img src="images/spectrum.png" width="400px">
+<img src="images/spectrum.png" width="400">
 
