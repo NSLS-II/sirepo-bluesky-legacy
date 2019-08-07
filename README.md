@@ -16,6 +16,7 @@ Prepare local Sirepo server:
 ```
 SIREPO_FEATURE_CONFIG_SIM_TYPES=srw SIREPO_AUTH_METHODS=bluesky:guest SIREPO_AUTH_BLUESKY_SECRET=bluesky sirepo service http
 ```
+
 - in your browser, go to http://10.10.10.10:8000/srw, click the ":cloud: Import"
   button in the right-upper corner and upload the [archive](https://github.com/mrakitin/sirepo_bluesky/blob/master/basic.zip)
   with the simulation stored in this repo
@@ -35,41 +36,25 @@ conda create -n sirepo_bluesky python=3.6 -y
 conda activate sirepo_bluesky
 pip install -r requirements.txt
 ```
-- start ipython and run the following:
+- start `ipython` and run the following:
 ```py
- % run -i re_config.py
- import sirepo_detector as sd
- sirepo_det = sd.SirepoDetector(sim_id='qyQ4yILz', reg=db.reg)
- sirepo_det.select_optic('Aperture')
- param1 = sirepo_det.create_parameter('horizontalSize')
- param2 = sirepo_det.create_parameter('verticalSize')
- sirepo_det.read_attrs = ['image', 'mean', 'photon_energy']
- sirepo_det.configuration_attrs = ['horizontal_extent',
-                                   'vertical_extent',
-                                   'shape']
- ```
- ```py
- RE(bp.grid_scan([sirepo_det],
-                    param1, 0, 1, 10,
-                    param2, 0, 1, 10,
-                    True))
+% run -i re_config.py
+import sirepo_detector as sd
+sirepo_det = sd.SirepoDetector(sim_id='qyQ4yILz', reg=db.reg)
+sirepo_det.select_optic('Aperture')
+param1 = sirepo_det.create_parameter('horizontalSize')
+param2 = sirepo_det.create_parameter('verticalSize')
+sirepo_det.read_attrs = ['image', 'mean', 'photon_energy']
+sirepo_det.configuration_attrs = ['horizontal_extent',
+                                  'vertical_extent',
+                                  'shape']
 ```
 
-In the interactive input prompt enter the following:
-```
-In [5]: %run -i sirepo_detector.py
-Tunable parameters for Bluesky scan:
-OPTICAL ELEMENT:    Aperture
-PARAMETERS:        ['verticalOffset', 'horizontalSize', 'title', 'verticalSize', 'horizontalOffset', 'shape', 'position', 'type', 'id']
-
-OPTICAL ELEMENT:    Watchpoint
-PARAMETERS:        ['position', 'type', 'id', 'title']
-
-WATCHPOINTS:       {'Watchpoint': '21'}
-Please select optical element: Aperture
-Please select watchpoint: Watchpoint
-Please select parameter: horizontalSize
-Please select another parameter or press ENTER to only use one: verticalSize
+```py
+RE(bp.grid_scan([sirepo_det],
+                param1, 0, 1, 10,
+                param2, 0, 1, 10,
+                True))
 ```
 
 You should get something like:
@@ -101,9 +86,11 @@ sirepo_det.configuration_attrs = ['horizontal_extent',
                                   'vertical_extent',
                                   'shape']
 ```
+
 ```py
 RE(bp.count([sirepo_det]))
 ```
+
 ```py
 hdr = db[-1]
 imgs = list(hdr.data('sirepo_det_image'))
