@@ -38,7 +38,7 @@ pip install -r requirements.txt
 ```
 - start `ipython` and run the following:
 ```py
-% run -i re_config.py
+%run -i re_config.py
 import sirepo_detector as sd
 sirepo_det = sd.SirepoDetector(sim_id='qyQ4yILz', reg=db.reg)
 sirepo_det.select_optic('Aperture')
@@ -78,7 +78,7 @@ To view single-electron spectrum report
 (**Hint:** use a different `sim_id`, e.g. for the NSLS-II CHX beamline example): 
 
 ```py
-% run -i re_config.py
+%run -i re_config.py
 import sirepo_detector as sd
 sirepo_det = sd.SirepoDetector(sim_id='8GJJWLFh', reg=db.reg, source_simulation=True)
 sirepo_det.read_attrs = ['image', 'mean', 'photon_energy']
