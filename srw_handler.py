@@ -1,5 +1,5 @@
 import numpy as np
-import uti_plot_com as srw_io
+import srwpy.uti_plot_com as srw_io
 
 
 def read_srw_file(filename, ndim=2):
