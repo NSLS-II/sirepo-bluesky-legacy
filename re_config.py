@@ -31,7 +31,7 @@ RE.subscribe(bec)
 #     pass
 
 # Temp sqlite backend:
-db = Broker.from_config(temp_config())
+db = Broker.named('local')
 
 RE.subscribe(db.insert)
 db.reg.register_handler('srw', SRWFileHandler, overwrite=True)

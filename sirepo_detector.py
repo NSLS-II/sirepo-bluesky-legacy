@@ -40,15 +40,46 @@ class SirepoDetector(Device):
     horizontal_extent = Cpt(Signal)
     vertical_extent = Cpt(Signal)
 
-    def __init__(self, name='sirepo_det', reg=None, sim_id=None, watch_name=None, sirepo_server='http://10.10.10.10:8000',
-                 source_simulation=False,**kwargs):
+    def __init__(self, name='sirepo_det', reg=None, sim_id=None, watch_name=None,
+                 sirepo_server='http://10.10.10.10:8000', source_simulation=False, **kwargs):
         super().__init__(name=name, **kwargs)
         self.reg = reg
         self.sirepo_component = None
-        self.field0 = None
-        self.field0_units = None
-        self.field1 = None
-        self.field1_units = None
+        self.fields = {}
+        self.field_units = {}
+        self.parents = {}
+
+        #self.field0 = None
+        #self.field0_units = None
+        #self.par0 = None
+        #self.field1 = None
+        #self.field1_units = None
+        #self.par1 = None
+        #self.field2 = None
+        #self.field2_units = None
+        #self.par2 = None
+        #self.field3 = None
+        #self.field3_units = None
+        #self.par3 = None
+        #self.field4 = None
+        #self.field4_units = None
+        #self.par4 = None
+        #self.field5 = None
+        #self.field5_units = None
+        #self.par5 = None
+        #self.field6 = None
+        #self.field6_units = None
+        #self.par6 = None
+        #self.field7 = None
+        #self.field7_units = None
+        #self.par7 = None
+        #self.field8 = None
+        #self.field8_units = None
+        #self.par8 = None
+        #self.field9 = None
+        #self.field9_units = None
+        #self.par9 = None
+
         self._resource_id = None
         self._result = {}
         self._sim_id = sim_id
@@ -98,6 +129,8 @@ class SirepoDetector(Device):
                                data['models']['beamline'][optic_id].items()}
             for k, v in self.parameters.items():
                 getattr(value, k).set(v)
+                # data['models']['beamline']['<OPTICAL ELEMENT>']['<ITS COMPONENT>']
+                print()
 
     def trigger(self):
         super().trigger()
@@ -108,18 +141,15 @@ class SirepoDetector(Device):
 
         if not self.source_simulation:
             if self.sirepo_component is not None:
-
-                real_field0 = self.field0.replace('sirepo_', '')
-                real_field1 = self.field1.replace('sirepo_', '')
-
-                x = self.active_parameters[real_field0].read()[f'{self.sirepo_component.name}_{self.field0}']['value']
-                y = self.active_parameters[real_field1].read()[f'{self.sirepo_component.name}_{self.field1}']['value']
-
-                element = self.sb.find_element(self.data['models']['beamline'],
-                                               'title',
-                                               self.sirepo_component.name)
-                element[real_field0] = x
-                element[real_field1] = y
+                for i in range(len(self.active_parameters)):
+                    real_field = self.fields['field' + str(i)].replace('sirepo_', '')
+                    dict_key = self.fields['field' + str(i)].replace('sirepo', self.parents['par' + str(i)])
+                    x = self.active_parameters[dict_key].read()[
+                        f'{self.parents["par" + str(i)]}_{self.fields["field" + str(i)]}']['value']
+                    element = self.sb.find_element(self.data['models']['beamline'],
+                                                   'title',
+                                                   self.parents['par' + str(i)])
+                    element[real_field] = x
 
                 watch = self.sb.find_element(self.data['models']['beamline'],
                                              'title',
@@ -132,6 +162,7 @@ class SirepoDetector(Device):
 
         with open(srw_file, 'wb') as f:
             f.write(self.sb.get_datafile())
+
 
         if self.data['report'] in self.one_d_reports:
             ndim = 1
@@ -187,7 +218,7 @@ class SirepoDetector(Device):
                 optic_id = self.find_optic_id_by_name(optic, data)
 
                 self.parameters = {f'sirepo_{k}': v for k, v in
-                          data['models']['beamline'][optic_id].items()}
+                                   data['models']['beamline'][optic_id].items()}
 
                 self.optic_parameters[optic] = self.parameters
 
@@ -204,14 +235,13 @@ class SirepoDetector(Device):
         else:
             # Create source components
             self.source_parameters = {f'sirepo_intensityReport_{k}': v for k, v in
-                          data['models']['intensityReport'].items()}
+                                      data['models']['intensityReport'].items()}
             def source_class_factory(cls_name):
                 dd = {k: Cpt(SynAxis) for k in self.source_parameters}
                 return type(cls_name, (Device,), dd)
 
             SirepoComponent = source_class_factory('SirepoComponent')
             self.source_component = SirepoComponent(name='intensityReport')
-
 
             for k, v in self.source_parameters.items():
                 getattr(self.source_component, k).set(v)
@@ -257,12 +287,18 @@ class SirepoDetector(Device):
     """
     def create_parameter(self, name):
         real_name = "sirepo_" + name
-        if self.field0 is None:
-            self.field0 = real_name
-        else:
-            self.field1 = real_name
+        ct = 0
+        while 'field' + str(ct) in self.fields.keys():
+            ct += 1
+        fieldkey = 'field' + str(ct)
+        parentkey = 'par' + str(ct)
+
+        self.fields[fieldkey] = real_name
+        self.parents[parentkey] = self.sirepo_component.name
+        key = self.parents[parentkey] + '_' + name
         param = getattr(self.sirepo_component, real_name)
-        self.active_parameters[name] = param
+        self.active_parameters[key] = param
+
         return param
 
     """
