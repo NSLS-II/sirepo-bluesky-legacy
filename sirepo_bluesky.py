@@ -66,6 +66,35 @@ class SirepoBluesky(object):
         self.data = res['data']
         return self.data, self.schema
 
+    def copy_sim(self, sim_name):
+        """ Create a copy of the current simulation. Returns a new instance of SirepoBluesky. """
+        assert self.sim_id
+        # simulationId, simulationType, name, folder
+        res = self._post_json('copy-simulation', {
+            'simulationId': self.sim_id,
+            'simulationType': self.sim_type,
+            'folder': self.data['models']['simulation']['folder'],
+            'name': sim_name,
+        })
+        copy = SirepoBluesky(self.server, self.secret)
+        copy.cookies = self.cookies
+        copy.sim_type = self.sim_type
+        copy.sim_id = res['models']['simulation']['simulationId']
+        copy.schema = self.schema
+        copy.data = res
+        copy.is_copy = True
+        return copy
+
+    def delete_copy(self):
+        """ Delete a simulation which was created using copy_sim(). """
+        assert self.is_copy
+        res = self._post_json('delete-simulation', {
+            'simulationId': self.sim_id,
+            'simulationType': self.sim_type,
+        })
+        assert res['state'] == 'ok'
+        self.sim_id = None
+
     @staticmethod
     def find_element(elements, field, value):
         """ Helper method to lookup an element in an array by field value. """
