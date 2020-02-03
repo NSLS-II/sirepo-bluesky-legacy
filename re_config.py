@@ -1,10 +1,12 @@
+import datetime
+
 import bluesky.preprocessors as bpp
 import bluesky.plan_stubs as bps
 import bluesky.plans as bp
 from bluesky.run_engine import RunEngine
 from bluesky.callbacks import best_effort
 from bluesky.simulators import summarize_plan
-from bluesky.utils import install_qt_kicker
+from bluesky.utils import install_kicker
 from bluesky.utils import ProgressBarManager
 
 import databroker
@@ -35,6 +37,6 @@ RE.subscribe(db.insert)
 db.reg.register_handler('srw', SRWFileHandler, overwrite=True)
 
 plt.ion()
-install_qt_kicker()
+install_kicker()
 
-_ = make_dir_tree(2018, base_path='/tmp/data')
+_ = make_dir_tree(datetime.datetime.now().year, base_path='/tmp/data')

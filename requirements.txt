@@ -1,10 +1,12 @@
 bluesky
-ophyd
 databroker
-pymongo
+flake8
 ipython
 matplotlib
+numconv
+ophyd
+pymongo
 pyqt5
 pytest
-flake8
 requests
+unyt
