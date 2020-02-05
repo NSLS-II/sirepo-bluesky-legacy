@@ -234,7 +234,6 @@ def diff_ev(bounds, fields, popsize=10, crosspb=0.8, mut=0.05, threshold=1.9, mu
             # score keeping
             gen_best = max(gen_scores)  # fitness of best individual
             gen_sol = pop[gen_scores.index(max(gen_scores))]  # solution of best individual
-            worst_indv = pop[gen_scores.index(min(gen_scores))]  # solution of best individual
             best_gen_sol.append(gen_sol)
 
             print('      > GENERATION BEST:', gen_best)
@@ -252,11 +251,20 @@ def diff_ev(bounds, fields, popsize=10, crosspb=0.8, mut=0.05, threshold=1.9, mu
             if consec_best_ctr >= 5 and old_best_fit_val >= threshold:
                 pass
             else:
-                pop, _ = omea(pop, fields)  # ***
+                pop, ind_sol = omea(pop, fields)  # ***
 
             # introduce a random individual for variation
-            for k in range(len(worst_indv)):
-                worst_indv[k] = uniform(bounds[k][0], bounds[k][1])
+            change_index = ind_sol.index(min(ind_sol))
+            changed_indv = pop[change_index]
+            for k in range(len(changed_indv)):
+                changed_indv[k] = uniform(bounds[k][0], bounds[k][1])
+            count_params.clear()
+            for t in range(len(fields)):
+                count_params.append(fields[t])
+                count_params.append(changed_indv[t])
+            RE(bps.mv(*count_params))
+            RE(bp.count([sirepo_det, *fields]))
+            ind_sol[change_index] = db[-1].table()['sirepo_det_mean'].values[0]
 
     x_best = best_gen_sol[-1]
     print('\nThe best individual is', x_best, 'with a fitness of', gen_best)
@@ -264,38 +272,23 @@ def diff_ev(bounds, fields, popsize=10, crosspb=0.8, mut=0.05, threshold=1.9, mu
 
 
 sirepo_det = sd.SirepoDetector(sim_id='3eP3NeVp', reg=db.reg)
-#sirepo_det.select_optic('Aperture1')
-#param1 = sirepo_det.create_parameter('horizontalSize')
-#param2 = sirepo_det.create_parameter('verticalSize')
-# param3 = sirepo_det.create_parameter('position')
-#sirepo_det.select_optic('Aperture2')
-#param4 = sirepo_det.create_parameter('horizontalSize')
-#param5 = sirepo_det.create_parameter('verticalSize')
-# param6 = sirepo_det.create_parameter('position')
-#sirepo_det.select_optic('Toroid')
-#param7 = sirepo_det.create_parameter('tangentialRadius')
-#param8 = sirepo_det.create_parameter('sagittalRadius')
-#param9 = sirepo_det.create_parameter('tangentialSize')
-#param10 = sirepo_det.create_parameter('sagittalSize')
-#sirepo_det.read_attrs = ['image', 'mean', 'photon_energy']
-#sirepo_det.configuration_attrs = ['horizontal_extent',
-#                                  'vertical_extent',
-#                                  'shape']
+
 fields = []
-sirepo_det.select_optic('Aperture1')
-fields.append(sirepo_det.create_parameter('horizontalSize'))
-fields.append(sirepo_det.create_parameter('verticalSize'))
-sirepo_det.select_optic('Aperture2')
-fields.append(sirepo_det.create_parameter('horizontalSize'))
-fields.append(sirepo_det.create_parameter('verticalSize'))
+sirepo_det.select_optic('Toroid')
+fields.append(sirepo_det.create_parameter('tangentialRadius'))
+fields.append(sirepo_det.create_parameter('normalVectorX'))
+fields.append(sirepo_det.create_parameter('normalVectorZ'))
+fields.append(sirepo_det.create_parameter('tangentialVectorX'))
+# fields.append(sirepo_det.create_parameter('grazingAngle'))
 sirepo_det.read_attrs = ['image', 'mean', 'photon_energy']
 sirepo_det.configuration_attrs = ['horizontal_extent',
                                   'vertical_extent',
                                   'shape']
-# sirepo_det.update_parameters()
-#print()
-#sirepo_det.trigger()
-#print()
 
-diff_ev(bounds=[(3, 5), (.3, .5), (.05, .15), (.05, .15)], fields= fields, popsize=5,
-        crosspb=0.8, mut=0.1, threshold=0, mut_type='best/1')
+# print()
+# sirepo_det.trigger()
+# sirepo_det.trigger()
+# print()
+
+diff_ev(bounds=[(1000, 10000), (0.99995, 0.9999875), (-0.009999833,-0.004999979), (0.004999979,0.009999833)],
+        fields= fields, popsize=5, crosspb=0.8, mut=0.1, threshold=0, mut_type='best/1')
