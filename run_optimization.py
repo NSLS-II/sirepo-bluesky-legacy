@@ -23,7 +23,7 @@ def ensure_bounds(vec, bounds):
     return vec_new
 
 
-def omea(population, fields):
+def omea(population, fields, grazing_params, grazing_index, autocompute_types):
     ind_sol = []
     population.sort()
     print('Getting population individual solutions\nProgress:')
@@ -33,6 +33,8 @@ def omea(population, fields):
         ind_count_params.append(fields[t])
         ind_count_params.append(population[0][t])
     RE(bps.mv(*ind_count_params))
+    if len(grazing_params) > 0:
+        update_grazing_vectors(grazing_params, grazing_index, fields, autocompute_types)
     RE(bp.count([sirepo_det, *fields]))
     ind_sol.append(db[-1].table()['sirepo_det_mean'].values[0])
     for i in range(len(population) - 1):
@@ -46,6 +48,8 @@ def omea(population, fields):
                 between_count_params.append(fields[t])
                 between_count_params.append(between[j][t])
             RE(bps.mv(*between_count_params))
+            if len(grazing_params) > 0:
+                update_grazing_vectors(grazing_params, grazing_index, fields, autocompute_types)
             RE(bp.count([sirepo_det, *fields]))
             chk_mean.append(db[-1].table()['sirepo_det_mean'].values[0])
 
@@ -54,6 +58,8 @@ def omea(population, fields):
             ind_count_params.append(fields[t])
             ind_count_params.append(population[i + 1][t])
         RE(bps.mv(*ind_count_params))
+        if len(grazing_params) > 0:
+            update_grazing_vectors(grazing_params, grazing_index, fields, autocompute_types)
         RE(bp.count([sirepo_det, *fields]))
         ind_sol.append(db[-1].table()['sirepo_det_mean'].values[0])
 
@@ -83,7 +89,7 @@ def rand_1(pop, popsize, t_indx, mut, bounds):
     return v_donor
 
 
-def best_1(pop, popsize, t_indx, mut, bounds, ind_sol):  # ***
+def best_1(pop, popsize, t_indx, mut, bounds, ind_sol):
     # v = x_best + F * (x_r1 - x_r2)
     x_best = pop[ind_sol.index(max(ind_sol))]
     idxs = [idx for idx in range(popsize) if idx != t_indx]
@@ -97,7 +103,7 @@ def best_1(pop, popsize, t_indx, mut, bounds, ind_sol):  # ***
     return v_donor
 
 
-def current_to_best_1(pop, popsize, t_indx, mut, bounds, ind_sol):  # ***
+def current_to_best_1(pop, popsize, t_indx, mut, bounds, ind_sol):
     # v = x_curr + F * (x_best - x_curr) + F * (x_r1 - r_r2)
     x_best = pop[ind_sol.index(max(ind_sol))]
     idxs = [idx for idx in range(popsize) if idx != t_indx]
@@ -150,12 +156,57 @@ def rand_2(pop, popsize, t_indx, mut, bounds):
     return v_donor
 
 
-def diff_ev(bounds, fields, popsize=10, crosspb=0.8, mut=0.05, threshold=1.9, mut_type='rand/1'):  # ***
+def update_grazing_vectors(grazing_params, grazing_index, fields, autocompute_types):  # ******************
+    vectors = []
+    for i in range(len(grazing_index)):
+        grazing_angle = fields[grazing_index[i]].get()[0]
+        nvx = nvy = np.sqrt(1 - np.sin(grazing_angle / 1000) ** 2)
+        tvx = tvy = np.sqrt(1 - np.cos(grazing_angle / 1000) ** 2)
+        nvz = -tvx
+        if autocompute_types[i] == 'horizontal':
+            nvy = tvy = 0
+        elif autocompute_types[i] == 'vertical':
+            nvx = tvx = 0
+        for j in range(len(grazing_params)):
+            print(5 * i + j)
+            if 'normalVectorX' in grazing_params[5 * i + j].name:
+                grazing_params[5 * i + j].set(nvx)
+            elif 'normalVectorY' in grazing_params[5 * i + j].name:
+                grazing_params[5 * i + j].set(nvy)
+            elif 'tangentialVectorX' in grazing_params[5 * i + j].name:
+                grazing_params[5 * i + j].set(tvx)
+            elif 'tangentialVectorY' in grazing_params[5 * i + j].name:
+                grazing_params[5 * i + j].set(tvy)
+            elif 'normalVectorZ' in grazing_params[5 * i + j].name:
+                grazing_params[5 * i + j].set(nvz)
+        print()
+
+
+def diff_ev(bounds, fields, popsize=10, crosspb=0.8, mut=0.05, threshold=1.9, mut_type='rand/1'):
     # Initial population
     population = []
     init_indv = []
+    grazing_params = []
+    grazing_index = []
+    autocompute_types = []
     for i in range(len(fields)):
         init_indv.append(fields[i].get()[0])
+        if 'grazingAngle' in fields[i].name and ('Toroid' in fields[i].name or 'Circular Cylinder' in
+                                                 fields[i].name or 'Elliptical Cylinder' in fields[i].name):
+            grazing_index.append(i)
+            if 'Toroid' in fields[i].name:
+                optic_name = 'Toroid'
+            elif 'Circular' in fields[i].name:
+                optic_name = 'Circular Cylinder'
+            else:
+                optic_name = 'Elliptical Cylinder'
+            sirepo_det.select_optic(optic_name)
+            autocompute_types.append(sirepo_det.create_parameter('autocomputeVectors'))
+            grazing_params.append(sirepo_det.create_parameter('normalVectorX'))
+            grazing_params.append(sirepo_det.create_parameter('tangentialVectorX'))
+            grazing_params.append(sirepo_det.create_parameter('normalVectorY'))
+            grazing_params.append(sirepo_det.create_parameter('tangentialVectorY'))
+            grazing_params.append(sirepo_det.create_parameter('normalVectorZ'))
     population.append(init_indv)
     for i in range(popsize - 1):
         indv = []
@@ -164,9 +215,13 @@ def diff_ev(bounds, fields, popsize=10, crosspb=0.8, mut=0.05, threshold=1.9, mu
         population.append(indv)
     init_pop = population[:]
 
+    # need to update grazing angle vectors for accurate mean readings
+    # if len(grazing_params) > 0:
+    #    update_grazing_vectors(grazing_params, grazing_index, fields, autocompute_types)
+
     # Evaluate fitness
     # OMEA
-    new_init_pop, ind_sol = omea(init_pop, fields)
+    new_init_pop, ind_sol = omea(init_pop, fields, grazing_params, grazing_index, autocompute_types)
 
     pop = new_init_pop[:]
 
@@ -174,7 +229,7 @@ def diff_ev(bounds, fields, popsize=10, crosspb=0.8, mut=0.05, threshold=1.9, mu
     v = 0  # generation number
     consec_best_ctr = 0  # counting successive generations with no change to best value
     old_best_fit_val = 0
-    while (not (consec_best_ctr >= 5 and old_best_fit_val >= threshold)):
+    while not (consec_best_ctr >= 5 and old_best_fit_val >= threshold):
         if v >= 100:
             print("It's taking too long. Stopping optimization.")
             break
@@ -189,11 +244,11 @@ def diff_ev(bounds, fields, popsize=10, crosspb=0.8, mut=0.05, threshold=1.9, mu
                 if mut_type == 'rand/1':
                     v_donor = rand_1(pop, popsize, w, mut, bounds)
                 elif mut_type == 'best/1':
-                    v_donor = best_1(pop, popsize, w, mut, bounds, ind_sol)  # ***
+                    v_donor = best_1(pop, popsize, w, mut, bounds, ind_sol)
                 elif mut_type == 'current-to-best/1':
-                    v_donor = current_to_best_1(pop, popsize, w, mut, bounds, ind_sol)  # ***
+                    v_donor = current_to_best_1(pop, popsize, w, mut, bounds, ind_sol)
                 elif mut_type == 'best/2':
-                    v_donor = best_2(pop, popsize, w, mut, bounds, ind_sol)  # ***
+                    v_donor = best_2(pop, popsize, w, mut, bounds, ind_sol)
                 elif mut_type == 'rand/2':
                     v_donor = rand_2(pop, popsize, w, mut, bounds)
 
@@ -213,6 +268,8 @@ def diff_ev(bounds, fields, popsize=10, crosspb=0.8, mut=0.05, threshold=1.9, mu
                     count_params.append(fields[t])
                     count_params.append(v_trial[t])
                 RE(bps.mv(*count_params))
+                if len(grazing_params) > 0:
+                    update_grazing_vectors(grazing_params, grazing_index, fields, autocompute_types)
                 RE(bp.count([sirepo_det, *fields]))
                 score_trial = db[-1].table()['sirepo_det_mean'].values[0]
 
@@ -222,6 +279,8 @@ def diff_ev(bounds, fields, popsize=10, crosspb=0.8, mut=0.05, threshold=1.9, mu
                     count_params.append(fields[t])
                     count_params.append(x_t[t])
                 RE(bps.mv(*count_params))
+                if len(grazing_params) > 0:
+                    update_grazing_vectors(grazing_params, grazing_index, fields, autocompute_types)
                 RE(bp.count([sirepo_det, *fields]))
                 score_target = db[-1].table()['sirepo_det_mean'].values[0]
 
@@ -251,7 +310,7 @@ def diff_ev(bounds, fields, popsize=10, crosspb=0.8, mut=0.05, threshold=1.9, mu
             if consec_best_ctr >= 5 and old_best_fit_val >= threshold:
                 pass
             else:
-                pop, ind_sol = omea(pop, fields)  # ***
+                pop, ind_sol = omea(pop, fields, grazing_params, grazing_index, autocompute_types)
 
             # introduce a random individual for variation
             change_index = ind_sol.index(min(ind_sol))
@@ -263,6 +322,8 @@ def diff_ev(bounds, fields, popsize=10, crosspb=0.8, mut=0.05, threshold=1.9, mu
                 count_params.append(fields[t])
                 count_params.append(changed_indv[t])
             RE(bps.mv(*count_params))
+            if len(grazing_params) > 0:
+                update_grazing_vectors(grazing_params, grazing_index, fields, autocompute_types)
             RE(bp.count([sirepo_det, *fields]))
             ind_sol[change_index] = db[-1].table()['sirepo_det_mean'].values[0]
 
@@ -273,22 +334,18 @@ def diff_ev(bounds, fields, popsize=10, crosspb=0.8, mut=0.05, threshold=1.9, mu
 
 sirepo_det = sd.SirepoDetector(sim_id='3eP3NeVp', reg=db.reg)
 
-fields = []
+field_list = []
 sirepo_det.select_optic('Toroid')
-fields.append(sirepo_det.create_parameter('tangentialRadius'))
-fields.append(sirepo_det.create_parameter('normalVectorX'))
-fields.append(sirepo_det.create_parameter('normalVectorZ'))
-fields.append(sirepo_det.create_parameter('tangentialVectorX'))
-# fields.append(sirepo_det.create_parameter('grazingAngle'))
+field_list.append(sirepo_det.create_parameter('tangentialRadius'))
+field_list.append(sirepo_det.create_parameter('grazingAngle'))
+sirepo_det.select_optic('Circular Cylinder')
+field_list.append(sirepo_det.create_parameter('grazingAngle'))
+# sirepo_det.select_optic('Elliptical Cylinder')
+# field_list.append(sirepo_det.create_parameter('grazingAngle'))
 sirepo_det.read_attrs = ['image', 'mean', 'photon_energy']
 sirepo_det.configuration_attrs = ['horizontal_extent',
                                   'vertical_extent',
                                   'shape']
 
-# print()
-# sirepo_det.trigger()
-# sirepo_det.trigger()
-# print()
-
-diff_ev(bounds=[(1000, 10000), (0.99995, 0.9999875), (-0.009999833,-0.004999979), (0.004999979,0.009999833)],
-        fields= fields, popsize=5, crosspb=0.8, mut=0.1, threshold=0, mut_type='best/1')
+diff_ev(bounds=[(1000, 10000), (5, 10), (5, 10)], fields=field_list, popsize=5,
+        crosspb=0.8, mut=0.1, threshold=0, mut_type='best/1')
