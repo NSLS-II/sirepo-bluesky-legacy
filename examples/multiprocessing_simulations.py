@@ -9,7 +9,6 @@ sb.auth('srw', sim_id)
 
 
 def run(sim):
-    # print(f"I'm process {ii}")
     print('running sim {}'.format(sim.sim_id))
     sim.run_simulation()
 
@@ -30,11 +29,10 @@ def main():
         c1.data['report'] = 'watchpointReport{}'.format(watch['id'])
         copies.append(c1)
 
-    # try:
     if RUN_PARALLEL:
         procs = []
         for i in range(COPY_COUNT):
-            p = Process(target=run, args=[copies[i]])
+            p = Process(target=run, args=(copies[i],))
             p.start()
             procs.append(p)
         # wait for procs to finish
@@ -45,7 +43,6 @@ def main():
         for i in range(COPY_COUNT):
             print('running sim: {}', copies[i].sim_id)
             copies[i].run_simulation()
-    # except:
     # get results and clean up the copied simulations
     for i in range(COPY_COUNT):
         f = copies[i].get_datafile()
