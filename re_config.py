@@ -30,11 +30,12 @@ RE.subscribe(bec)
 # except:
 #     pass
 
-# Temp sqlite backend:
+# MongoDB backend:
 db = Broker.named('local')
 
 RE.subscribe(db.insert)
 db.reg.register_handler('srw', SRWFileHandler, overwrite=True)
+db.reg.register_handler('SIREPO_FLYER', SRWFileHandler, overwrite=True)
 
 plt.ion()
 install_kicker()

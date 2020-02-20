@@ -8,6 +8,13 @@ from sirepo_bluesky import SirepoBluesky
 import sirepo_detector as sd
 
 
+# multiprocessing
+def run_sim(sim):
+    print('Running simulation {}'.format(sim.sim_id))
+    sim.run_simulation()
+
+
+# def main():
 def ensure_bounds(vec, bounds):
     # Makes sure each individual stays within bounds and adjusts them if they aren't
     vec_new = []
@@ -65,10 +72,8 @@ def omea(positions, fields, grazing_params, grazing_index, autocompute_types):
             update_grazing_vectors(grazing_params, grazing_index, fields, autocompute_types)
         RE(bp.count([sirepo_det, *fields]))
         evaluations.append(db[-1].table()['sirepo_det_mean'].values[0])
-
         # find index of max
         ii = chk_mean.index(np.max(chk_mean))
-        # print(between[ii], chk_mean[ii])
         max_positions.append(between[ii])
         max_evals.append(chk_mean[ii])
 
@@ -219,7 +224,7 @@ def crossover(population, mutated_indv, crosspb):
 def select(population, crossover_indv, ind_sol, fields, grazing_params, grazing_index, autocompute_types):
     positions = [elm for elm in crossover_indv]
     positions.insert(0, population[0])
-    positions, evals = omea(positions, fields, grazing_params,grazing_index, autocompute_types)
+    positions, evals = omea(positions, fields, grazing_params, grazing_index, autocompute_types)
     positions = positions[1:]
     evals = evals[1:]
     for i in range(len(evals)):
@@ -269,7 +274,6 @@ def diff_ev(bounds, fields, popsize=5, crosspb=0.8, mut=0.05, threshold=1.9, mut
     # Evaluate fitness/OMEA
     init_pop.sort()
     pop, ind_sol = omea(init_pop, fields, grazing_params, grazing_index, autocompute_types)
-    # reverse pop and ind_sol for OMEA to work better (maybe?)
     pop.reverse()
     ind_sol.reverse()
 
@@ -280,73 +284,16 @@ def diff_ev(bounds, fields, popsize=5, crosspb=0.8, mut=0.05, threshold=1.9, mut
     while not (consec_best_ctr >= 5 and old_best_fit_val >= threshold):
         print('\nGENERATION ' + str(v + 1))
         print('Working on mutation, crossover, and selection')
-        # gen_scores = []  # score keeping
-        best_gen_sol = []  # holding best scores of each generation
+        best_gen_sol = []  # hold best scores of each generation
         mutated_trial_pop = mutate(pop, mut_type, mut, bounds, ind_sol)
         cross_trial_pop = crossover(pop, mutated_trial_pop, crosspb)
-        pop, ind_sol = select(pop, cross_trial_pop, ind_sol, fields, grazing_params, grazing_index, autocompute_types)
+        pop, ind_sol = select(pop, cross_trial_pop, ind_sol, fields, grazing_params, grazing_index,
+                              autocompute_types)
 
         gen_best = np.max(ind_sol)
         best_indv = pop[ind_sol.index(gen_best)]
         best_gen_sol.append(best_indv)
         best_fitness.append(gen_best)
-
-        # for w in range(popsize):
-        #     # mutation
-        #     x_t = pop[w]  # target individual
-        #     if mut_type == 'rand/1':
-        #         v_donor = rand_1(pop, popsize, w, mut, bounds)
-        #     elif mut_type == 'best/1':
-        #         v_donor = best_1(pop, popsize, w, mut, bounds, ind_sol)
-        #     elif mut_type == 'current-to-best/1':
-        #         v_donor = current_to_best_1(pop, popsize, w, mut, bounds, ind_sol)
-        #     elif mut_type == 'best/2':
-        #         v_donor = best_2(pop, popsize, w, mut, bounds, ind_sol)
-        #     elif mut_type == 'rand/2':
-        #         v_donor = rand_2(pop, popsize, w, mut, bounds)
-        #
-        #     # crossover
-        #     v_trial = []
-        #     for u in range(len(x_t)):
-        #         crossover = random()
-        #         if crossover <= crosspb:
-        #             v_trial.append(v_donor[u])
-        #         else:
-        #             v_trial.append(x_t[u])
-        #
-        #     # selection
-        #     print(str(2 * w + 1), 'of', str(popsize * 2))
-        #     count_params = []
-        #     for t in range(len(fields)):
-        #         count_params.append(fields[t])
-        #         count_params.append(v_trial[t])
-        #     RE(bps.mv(*count_params))
-        #     if len(grazing_params) > 0:
-        #         update_grazing_vectors(grazing_params, grazing_index, fields, autocompute_types)
-        #     RE(bp.count([sirepo_det, *fields]))
-        #     score_trial = db[-1].table()['sirepo_det_mean'].values[0]
-        #
-        #     print(str(2 * w + 2), 'of', str(popsize * 2))
-        #     count_params.clear()
-        #     for t in range(len(fields)):
-        #         count_params.append(fields[t])
-        #         count_params.append(x_t[t])
-        #     RE(bps.mv(*count_params))
-        #     if len(grazing_params) > 0:
-        #         update_grazing_vectors(grazing_params, grazing_index, fields, autocompute_types)
-        #     RE(bp.count([sirepo_det, *fields]))
-        #     score_target = db[-1].table()['sirepo_det_mean'].values[0]
-        #
-        #     if score_trial > score_target:
-        #         pop[w] = v_trial
-        #         gen_scores.append(score_trial)
-        #     else:
-        #         gen_scores.append(score_target)
-        #
-        # # score keeping
-        # gen_best = max(gen_scores)  # fitness of best individual
-        # gen_sol = pop[gen_scores.index(max(gen_scores))]  # solution of best individual
-        # best_gen_sol.append(gen_sol)
 
         print('      > BEST FITNESS:', gen_best)
         print('         > BEST POSITIONS:', best_indv)
@@ -362,22 +309,34 @@ def diff_ev(bounds, fields, popsize=5, crosspb=0.8, mut=0.05, threshold=1.9, mut
         if consec_best_ctr >= 5 and old_best_fit_val >= threshold:
             print('Finished')
             break
-        else:
+        else:  # check me later
             # introduce a random individual for variation
-            # this needs OMEA - from current position to replaced individual
+            new_pos = ['', '']
+            curr_pos = []
+            for k in range(len(fields)):
+                curr_pos.append(pop[0][k])
+            new_pos[0] = curr_pos
             change_index = ind_sol.index(min(ind_sol))
             changed_indv = pop[change_index]
             for k in range(len(changed_indv)):
                 changed_indv[k] = uniform(bounds[k][0], bounds[k][1])
-            count_params.clear()
-            for t in range(len(fields)):
-                count_params.append(fields[t])
-                count_params.append(changed_indv[t])
-            RE(bps.mv(*count_params))
-            if len(grazing_params) > 0:
-                update_grazing_vectors(grazing_params, grazing_index, fields, autocompute_types)
-            RE(bp.count([sirepo_det, *fields]))
-            ind_sol[change_index] = db[-1].table()['sirepo_det_mean'].values[0]
+            new_pos[1] = changed_indv
+            new_pos, randomized_sol = omea(new_pos, fields, grazing_params, grazing_index, autocompute_types)
+            new_pos = new_pos[1:]
+            randomized_sol = randomized_sol[1:]
+            if randomized_sol[0] > ind_sol[change_index]:
+                ind_sol[change_index] = randomized_sol[0]
+                pop[change_index] = new_pos[0]
+            print()
+            # count_params.clear()
+            # for t in range(len(fields)):
+            #     count_params.append(fields[t])
+            #     count_params.append(changed_indv[t])
+            # RE(bps.mv(*count_params))
+            # if len(grazing_params) > 0:
+            #     update_grazing_vectors(grazing_params, grazing_index, fields, autocompute_types)
+            # RE(bp.count([sirepo_det, *fields]))
+            # ind_sol[change_index] = db[-1].table()['sirepo_det_mean'].values[0]
 
     x_best = best_gen_sol[-1]
     print('\nThe best individual is', x_best, 'with a fitness of', gen_best)
@@ -389,22 +348,26 @@ def diff_ev(bounds, fields, popsize=5, crosspb=0.8, mut=0.05, threshold=1.9, mut
     plt.plot(plot_index, best_fitness)
 
 
-sirepo_det = sd.SirepoDetector(sim_id='3eP3NeVp', reg=db.reg)
+sim_id = '3eP3NeVp'
+sb = SirepoBluesky('http://10.10.10.10:8000')
+sb.auth('srw', sim_id)
+
+sirepo_det = sd.SirepoDetector(sim_id=sim_id, reg=db.reg)
 
 field_list = []
 sirepo_det.select_optic('Toroid')
 field_list.append(sirepo_det.create_parameter('tangentialRadius'))
 field_list.append(sirepo_det.create_parameter('grazingAngle'))
-# sirepo_det.select_optic('Circular Cylinder')
-# field_list.append(sirepo_det.create_parameter('grazingAngle'))
-# sirepo_det.select_optic('Elliptical Cylinder')
-# field_list.append(sirepo_det.create_parameter('grazingAngle'))
 sirepo_det.read_attrs = ['image', 'mean', 'photon_energy']
 sirepo_det.configuration_attrs = ['horizontal_extent',
                                   'vertical_extent',
                                   'shape']
 
-# multiprocessing?
 
-diff_ev(bounds=[(1000, 10000), (5, 10)], fields=field_list, popsize=5,
+def main():
+    diff_ev(bounds=[(1000, 10000), (5, 10)], fields=field_list, popsize=5,
         crosspb=0.8, mut=0.1, threshold=0, mut_type='rand/1')
+
+
+if __name__ == '__main__':
+    main()
