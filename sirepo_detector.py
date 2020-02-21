@@ -150,43 +150,6 @@ class SirepoDetector(Device):
 
         return NullStatus()
 
-    # def collect_asset_docs(self):
-    #     items = list(self._asset_docs_cache)
-    #     self._asset_docs_cache.clear()
-    #     for item in items:
-    #         yield item
-    #
-    # def complete(self, *args, **kwargs):
-    #     self._datum_ids = []
-    #     datum_id = '{}/{}'.format(self._resource_uid, next(self._datum_counter))
-    #     datum = {'resource': self._resource_uid,
-    #              'datum_kwargs': {},
-    #              'datum_id': datum_id}
-    #     self._asset_docs_cache.append(('datum', datum))
-    #     self._datum_ids.append(datum_id)
-    #     return NullStatus()
-    #
-    # def collect(self):
-    #     self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-    #     server = '10.8.0.22'
-    #     self.ssh.connect(server, username='root')
-    #     with self.ssh.open_sftp() as sftp:
-    #         print(f'Saving a binary file from {server} to {self.filename_bin}')
-    #         sftp.get('/home/Save/FAstream.bin',  # TODO: make it configurable
-    #                  self.filename_bin)
-    #         print(f'Saving a text   file from {server} to {self.filename_txt}')
-    #         sftp.get('/home/Save/FAstreamSettings.txt',  # TODO: make it configurable
-    #                  self.filename_txt)
-    #
-    #     # Copied from 10-detectors.py (class EncoderFS)
-    #     now = ttime.time()
-    #     for datum_id in self._datum_ids:
-    #         data = {self.name: datum_id}
-    #         yield {'data': data,
-    #                'timestamps': {key: now for key in data}, 'time': now,
-    #                'filled': {key: False for key in data}}
-
-
     def describe(self):
         res = super().describe()
         res[self.image.name].update(dict(external="FILESTORE"))
