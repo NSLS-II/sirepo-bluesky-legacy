@@ -92,7 +92,7 @@ class SirepoDetector(Device):
         data, sirepo_schema = self.sb.auth('srw', self._sim_id)
         self.data = data
         for key, value in self.sirepo_components.items():
-            optic_id = self.find_optic_id_by_name(key, self.data)
+            optic_id = self.sb.find_optic_id_by_name(key)
             self.parameters = {f'sirepo_{k}': v for k, v in
                                data['models']['beamline'][optic_id].items()}
             for k, v in self.parameters.items():
@@ -160,12 +160,6 @@ class SirepoDetector(Device):
         self._resource_id = None
         self._result.clear()
 
-    def find_optic_id_by_name(self, optic_name, data):
-        for i in range(len(data['models']['beamline'])):
-            if data['models']['beamline'][i]['title'] == optic_name:
-                return i
-        raise ValueError(f'Not valid optic {optic_name}')
-
     def connect(self, sim_id):
         sb = SirepoBluesky(self.sirepo_server)
         data, sirepo_schema = sb.auth('srw', sim_id)
@@ -183,7 +177,7 @@ class SirepoDetector(Device):
             # to the one selected by the user
             for i in range(len(data['models']['beamline'])):
                 optic = (data['models']['beamline'][i]['title'])
-                optic_id = self.find_optic_id_by_name(optic, data)
+                optic_id = self.sb.find_optic_id_by_name(optic)
 
                 self.parameters = {f'sirepo_{k}': v for k, v in
                                    data['models']['beamline'][optic_id].items()}
@@ -196,7 +190,7 @@ class SirepoDetector(Device):
                 for k, v in self.parameters.items():
                     getattr(sirepo_component, k).set(v)
 
-                sirepo_components[sirepo_component.name] = sirepo_component
+            sirepo_components[sirepo_component.name] = sirepo_component
 
             self.sirepo_components = sirepo_components
 

@@ -1,4 +1,5 @@
 import datetime
+import numpy as np
 
 import bluesky.preprocessors as bpp
 import bluesky.plan_stubs as bps
