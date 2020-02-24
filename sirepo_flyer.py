@@ -3,7 +3,7 @@ import hashlib
 import os
 import time as ttime
 from collections import deque
-from multiprocessing import Process
+from multiprocessing import Process, Manager
 from pathlib import Path
 
 from ophyd.sim import NullStatus, new_uid
@@ -37,7 +37,7 @@ class BlueskyFlyer:
 
 
 class SirepoFlyer(BlueskyFlyer):
-    def __init__(self, sim_id, server_name, params_to_change, sim_code='srw',  # copy_count=5,
+    def __init__(self, sim_id, server_name, params_to_change, sim_code='srw',
                  watch_name='Watchpoint', run_parallel=True):
         super().__init__()
         self.name = 'sirepo_flyer'
@@ -48,6 +48,41 @@ class SirepoFlyer(BlueskyFlyer):
         self._copy_count = len(self.params_to_change)
         self.watch_name = watch_name
         self.run_parallel = run_parallel
+        self.return_status = {}
+        self._copies = None
+        self._srw_files = None
+
+    @property
+    def sim_id(self):
+        return self._sim_id
+
+    @sim_id.setter
+    def sim_id(self, value):
+        self._sim_id = value
+
+    @property
+    def server_name(self):
+        return self._server_name
+
+    @server_name.setter
+    def server_name(self, value):
+        self._server_name = value
+
+    @property
+    def params_to_change(self):
+        return self._params_to_change
+
+    @params_to_change.setter
+    def params_to_change(self, value):
+        self._params_to_change = dict(value)
+
+    @property
+    def sim_code(self):
+        return self._sim_code
+
+    @sim_code.setter
+    def sim_code(self, value):
+        self._sim_code = value
 
     @property
     def copy_count(self):
@@ -61,14 +96,32 @@ class SirepoFlyer(BlueskyFlyer):
             raise
         self._copy_count = value
 
+    @property
+    def watch_name(self):
+        return self._watch_name
+
+    @watch_name.setter
+    def watch_name(self, value):
+        self._watch_name = value
+
+    @property
+    def run_parallel(self):
+        return self._run_parallel
+
+    @run_parallel.setter
+    def run_parallel(self, value):
+        if isinstance(value, bool):
+            self._run_parallel = value
+        else:
+            raise TypeError(f'invalid type: {type(value)}. Must be boolean')
+
     def kickoff(self):
         sb = SirepoBluesky(self.server_name)
         data, schema = sb.auth(self.sim_code, self.sim_id)
         self._copies = []
         self._srw_files = []
-        # print('Length of params_to_change', len(self.params_to_change), 'inside class')
 
-        for i in range(self._copy_count):  # TODO: change it to loop over total number of simulations
+        for i in range(self._copy_count):
             datum_id = new_uid()
             date = datetime.datetime.now()
             srw_file = str(Path('/tmp/data') / Path(date.strftime('%Y/%m/%d')) / Path('{}.dat'.format(datum_id)))
@@ -96,9 +149,11 @@ class SirepoFlyer(BlueskyFlyer):
             self._copies.append(c1)
 
         if self.run_parallel:
+            manager = Manager()
+            self.return_status = manager.dict()
             procs = []
             for i in range(self.copy_count):
-                p = Process(target=self._run, args=(self._copies[i],))
+                p = Process(target=self._run, args=(self._copies[i], self.return_status))
                 p.start()
                 procs.append(p)
             # wait for procs to finish
@@ -110,6 +165,7 @@ class SirepoFlyer(BlueskyFlyer):
                 print(f'running sim: {self._copies[i].sim_id}')
                 status = self._copies[i].run_simulation()
                 print('Status:', status['state'])
+                self.return_status[self._copies[i].sim_id] = status['state']
         return NullStatus()
 
     def complete(self, *args, **kwargs):
@@ -124,10 +180,10 @@ class SirepoFlyer(BlueskyFlyer):
 
     def describe_collect(self):
         return_dict = {self.name:
-                        {f'{self.name}_image': {'source': f'{self.name}_image',
-                                                'dtype': 'array',
-                                                'shape': [-1, -1],
-                                                'external': 'FILESTORE:'},
+                       {f'{self.name}_image': {'source': f'{self.name}_image',
+                                               'dtype': 'array',
+                                               'shape': [-1, -1],
+                                               'external': 'FILESTORE:'},
                          f'{self.name}_shape': {'source': f'{self.name}_shape',
                                                 'dtype': 'array',
                                                 'shape': [2]},
@@ -145,14 +201,16 @@ class SirepoFlyer(BlueskyFlyer):
                                                           'shape': [2]},
                          f'{self.name}_hash_value': {'source': f'{self.name}_hash_value',
                                                      'dtype': 'string',
-                                                     'shape': []}
-                         }
+                                                     'shape': []},
+                         f'{self.name}_status': {'source': f'{self.name}_status',
+                                                 'dtype': 'string',
+                                                 'shape': []},
+                        }
                        }
 
         elem_name = []
         curr_param = []
         for inputs in self.params_to_change:
-            # inputs = self.params_to_change[i]
             for key, parameters_to_update in inputs.items():
                 elem_name.append(key)  # e.g., 'Aperture'
                 curr_param.append(list(parameters_to_update.keys()))  # e.g., 'horizontalSize'
@@ -186,9 +244,12 @@ class SirepoFlyer(BlueskyFlyer):
             vertical_extents.append(ret['vertical_extent'])
             hash_values.append(hashlib.md5(data_file).hexdigest())
 
-            print('copy {} data hash: {}'.format(self._copies[i].sim_id, hashlib.md5(data_file).hexdigest()))
+            print(f'copy {self._copies[i].sim_id} data hash: {hash_values[i]}')
             self._copies[i].delete_copy()
-        print('length of hash values:', len(hash_values))
+
+        statuses = []
+        for sim, status in self.return_status.items():
+            statuses.append(status)
 
         assert len(self._copies) == len(self._datum_ids), \
             f'len(self._copies) != len(self._datum_ids) ({len(self._copies)} != {len(self._datum_ids)})'
@@ -197,7 +258,6 @@ class SirepoFlyer(BlueskyFlyer):
         for i, datum_id in enumerate(self._datum_ids):
             elem_name = []
             curr_param = []
-
             data = {f'{self.name}_image': datum_id,
                     f'{self.name}_shape': shapes[i],
                     f'{self.name}_mean': means[i],
@@ -205,6 +265,7 @@ class SirepoFlyer(BlueskyFlyer):
                     f'{self.name}_horizontal_extent': horizontal_extents[i],
                     f'{self.name}_vertical_extent': vertical_extents[i],
                     f'{self.name}_hash_value': hash_values[i],
+                    f'{self.name}_status': statuses[i],
                     }
 
             for j in range(len(self.params_to_change)):
@@ -222,26 +283,26 @@ class SirepoFlyer(BlueskyFlyer):
                    'timestamps': {key: now for key in data}, 'time': now,
                    'filled': {key: False for key in data}}
 
-    def _run(self, sim):
+    @staticmethod
+    def _run(sim, return_status):
         print(f'running sim {sim.sim_id}')
         status = sim.run_simulation()
         print('Status:', status['state'])
-        # return status, shared variable?
+        return_status[sim.sim_id] = status['state']
 
 
 if __name__ == '__main__':
     # from re_config import *
 
     params_to_change = []
-    for i in range(1, 10+1):
+    for i in range(1, 5+1):
         key1 = 'Aperture'
-        parameters_update1 = {'horizontalSize': i * .1, 'verticalSize': (11 - i) * .1}
+        parameters_update1 = {'horizontalSize': i * .1, 'verticalSize': (6 - i) * .1}
         key2 = 'Lens'
         parameters_update2 = {'horizontalFocalLength': i + 10}
 
         params_to_change.append({key1: parameters_update1,
                                  key2: parameters_update2})
-    # print('Length of params_to_change', len(params_to_change), 'outside class')
 
     sirepo_flyer = SirepoFlyer(sim_id='87XJ4oEb', server_name='http://10.10.10.10:8000',
                                params_to_change=params_to_change, watch_name='W60')

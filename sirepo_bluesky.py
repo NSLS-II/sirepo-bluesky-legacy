@@ -110,7 +110,8 @@ class SirepoBluesky(object):
         raise ValueError(f'Not valid optic {optic_name}')
 
     def get_datafile(self):
-        """ Requests the raw datafile of simulation results from the server. Call auth() and run_simulation() before this. """
+        """ Requests the raw datafile of simulation results from the server.
+        Call auth() and run_simulation() before this. """
         assert hasattr(self, 'cookies'), 'call auth() before get_datafile()'
         url = 'download-data-file/{}/{}/{}/-1'.format(self.sim_type, self.sim_id, self.data['report'])
         response = requests.get('{}/{}'.format(self.server, url), cookies=self.cookies)
