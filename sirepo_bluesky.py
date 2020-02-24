@@ -104,9 +104,9 @@ class SirepoBluesky(object):
         assert False, 'element not found, {}={}'.format(field, value)
 
     def find_optic_id_by_name(self, optic_name):
-        for i in range(len(self.data['models']['beamline'])):
-            if self.data['models']['beamline'][i]['title'] == optic_name:
-                return i
+        for optic_id in range(len(self.data['models']['beamline'])):
+            if self.data['models']['beamline'][optic_id]['title'] == optic_name:
+                return optic_id
         raise ValueError(f'Not valid optic {optic_name}')
 
     def get_datafile(self):

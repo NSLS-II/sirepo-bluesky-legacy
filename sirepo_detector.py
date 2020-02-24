@@ -97,8 +97,6 @@ class SirepoDetector(Device):
                                data['models']['beamline'][optic_id].items()}
             for k, v in self.parameters.items():
                 getattr(value, k).set(v)
-                # data['models']['beamline']['<OPTICAL ELEMENT>']['<ITS COMPONENT>']
-                print()
 
     def trigger(self):
         super().trigger()
@@ -130,7 +128,6 @@ class SirepoDetector(Device):
 
         with open(srw_file, 'wb') as f:
             f.write(self.sb.get_datafile())
-
 
         if self.data['report'] in self.one_d_reports:
             ndim = 1
@@ -190,7 +187,7 @@ class SirepoDetector(Device):
                 for k, v in self.parameters.items():
                     getattr(sirepo_component, k).set(v)
 
-            sirepo_components[sirepo_component.name] = sirepo_component
+                sirepo_components[sirepo_component.name] = sirepo_component
 
             self.sirepo_components = sirepo_components
 
@@ -248,16 +245,16 @@ class SirepoDetector(Device):
         name of parameter to create 
     """
     def create_parameter(self, name):
-        real_name = "sirepo_" + name
+        real_name = f"sirepo_{name}"
         ct = 0
-        while 'field' + str(ct) in self.fields.keys():
+        while f'field{ct}' in self.fields.keys():
             ct += 1
-        fieldkey = 'field' + str(ct)
-        parentkey = 'par' + str(ct)
+        fieldkey = f'field{ct}'
+        parentkey = f'par{ct}'
 
         self.fields[fieldkey] = real_name
         self.parents[parentkey] = self.sirepo_component.name
-        key = self.parents[parentkey] + '_' + name
+        key = f"{self.parents[parentkey]}_{name}"
         param = getattr(self.sirepo_component, real_name)
         self.active_parameters[key] = param
 
