@@ -38,4 +38,5 @@ db.reg.register_handler('SIREPO_FLYER', SRWFileHandler, overwrite=True)
 plt.ion()
 install_kicker()
 
-_ = make_dir_tree(datetime.datetime.now().year, base_path='/tmp/data')
+ROOT_DIR = '/tmp/sirepo_flyer_data'
+_ = make_dir_tree(datetime.datetime.now().year, base_path=ROOT_DIR)

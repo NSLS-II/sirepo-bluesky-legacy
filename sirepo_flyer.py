@@ -37,24 +37,25 @@ class BlueskyFlyer:
 
 
 class SirepoFlyer(BlueskyFlyer):
-    def __init__(self, sim_id, server_name, params_to_change, sim_code='srw',
+    def __init__(self, sim_id, server_name, params_to_change, root_dir, sim_code='srw',
                  watch_name='Watchpoint', run_parallel=True):
         super().__init__()
         self.name = 'sirepo_flyer'
-        self.sim_id = sim_id
-        self.server_name = server_name
-        self.params_to_change = params_to_change
-        self.sim_code = sim_code
+        self._sim_id = sim_id
+        self._server_name = server_name
+        self._params_to_change = params_to_change
+        self._root_dir = root_dir
+        self._sim_code = sim_code
         self._copy_count = len(self.params_to_change)
-        self.watch_name = watch_name
-        self.run_parallel = run_parallel
+        self._watch_name = watch_name
+        self._run_parallel = run_parallel
         self.return_status = {}
         self._copies = None
         self._srw_files = None
     
     def __repr__(self):
-        return (f'{self.name} with sim_code="{self.sim_code}" and '
-                f'sim_id="{self._sim_id}" at {self.server_name}')
+        return (f'{self.name} with sim_code="{self._sim_code}" and '
+                f'sim_id="{self._sim_id}" at {self._server_name}')
 
     @property
     def sim_id(self):
@@ -79,6 +80,16 @@ class SirepoFlyer(BlueskyFlyer):
     @params_to_change.setter
     def params_to_change(self, value):
         self._params_to_change = value
+
+    @property
+    def root_dir(self):
+        return self._root_dir
+
+    @root_dir.setter
+    def root_dir(self, value):
+        if not os.path.isdir(value):
+            raise ValueError(f"directory named {value} not found")
+        self._root_dir = value
 
     @property
     def sim_code(self):
@@ -128,11 +139,11 @@ class SirepoFlyer(BlueskyFlyer):
         for i in range(self._copy_count):
             datum_id = new_uid()
             date = datetime.datetime.now()
-            srw_file = str(Path('/tmp/data') / Path(date.strftime('%Y/%m/%d')) / Path('{}.dat'.format(datum_id)))
+            srw_file = str(Path(self.root_dir) / Path(date.strftime('%Y/%m/%d')) / Path('{}.dat'.format(datum_id)))
             self._srw_files.append(srw_file)
             _resource_uid = new_uid()
             resource = {'spec': 'SIREPO_FLYER',
-                        'root': '/tmp/data',  # from 00-startup.py (added by mrakitin for future generations :D)
+                        'root': self.root_dir,  # from 00-startup.py (added by mrakitin for future generations :D)
                         'resource_path': srw_file,
                         'resource_kwargs': {},
                         'path_semantics': {'posix': 'posix', 'nt': 'windows'}[os.name],
@@ -297,6 +308,7 @@ class SirepoFlyer(BlueskyFlyer):
 
 if __name__ == '__main__':
     # from re_config import *
+    from re_config import ROOT_DIR
 
     params_to_change = []
     for i in range(1, 5+1):
@@ -308,7 +320,8 @@ if __name__ == '__main__':
         params_to_change.append({key1: parameters_update1,
                                  key2: parameters_update2})
 
-    sirepo_flyer = SirepoFlyer(sim_id='8cNnJ1ZF', server_name='http://10.10.10.10:8000',
-                               params_to_change=params_to_change, watch_name='W60')
+    sirepo_flyer = SirepoFlyer(sim_id='87XJ4oEb', server_name='http://10.10.10.10:8000',
+                               root_dir=ROOT_DIR, params_to_change=params_to_change,
+                               watch_name='W60')
 
     # RE(bp.fly([sirepo_flyer]))
