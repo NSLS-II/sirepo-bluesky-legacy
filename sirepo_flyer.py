@@ -74,7 +74,7 @@ class SirepoFlyer(BlueskyFlyer):
 
     @params_to_change.setter
     def params_to_change(self, value):
-        self._params_to_change = dict(value)
+        self._params_to_change = value
 
     @property
     def sim_code(self):
@@ -277,7 +277,7 @@ class SirepoFlyer(BlueskyFlyer):
             for ii in range(len(elem_name)):
                 for jj in range(len(curr_param[ii])):
                     data[f'{self.name}_{elem_name[ii]}_{curr_param[ii][jj]}'] =\
-                        params_to_change[i][elem_name[ii]][curr_param[ii][jj]]
+                        self.params_to_change[i][elem_name[ii]][curr_param[ii][jj]]
 
             yield {'data': data,
                    'timestamps': {key: now for key in data}, 'time': now,
