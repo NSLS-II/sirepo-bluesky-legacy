@@ -103,8 +103,15 @@ class SirepoBluesky(object):
                 return e
         assert False, 'element not found, {}={}'.format(field, value)
 
+    def find_optic_id_by_name(self, optic_name):
+        for optic_id in range(len(self.data['models']['beamline'])):
+            if self.data['models']['beamline'][optic_id]['title'] == optic_name:
+                return optic_id
+        raise ValueError(f'Not valid optic {optic_name}')
+
     def get_datafile(self):
-        """ Requests the raw datafile of simulation results from the server. Call auth() and run_simulation() before this. """
+        """ Requests the raw datafile of simulation results from the server.
+        Call auth() and run_simulation() before this. """
         assert hasattr(self, 'cookies'), 'call auth() before get_datafile()'
         url = 'download-data-file/{}/{}/{}/-1'.format(self.sim_type, self.sim_id, self.data['report'])
         response = requests.get('{}/{}'.format(self.server, url), cookies=self.cookies)

@@ -1,4 +1,5 @@
 import datetime
+import numpy as np
 
 import bluesky.preprocessors as bpp
 import bluesky.plan_stubs as bps
@@ -24,19 +25,18 @@ bec = best_effort.BestEffortCallback()
 RE.subscribe(bec)
 
 # MongoDB backend:
-# db = Broker.named('local')  # mongodb backend
-# try:
-#     databroker.assets.utils.install_sentinels(db.reg.config, version=1)
-# except:
-#     pass
-
-# Temp sqlite backend:
-db = Broker.from_config(temp_config())
+db = Broker.named('local')  # mongodb backend
+try:
+    databroker.assets.utils.install_sentinels(db.reg.config, version=1)
+except:
+    pass
 
 RE.subscribe(db.insert)
 db.reg.register_handler('srw', SRWFileHandler, overwrite=True)
+db.reg.register_handler('SIREPO_FLYER', SRWFileHandler, overwrite=True)
 
 plt.ion()
 install_kicker()
 
-_ = make_dir_tree(datetime.datetime.now().year, base_path='/tmp/data')
+ROOT_DIR = '/tmp/sirepo_flyer_data'
+_ = make_dir_tree(datetime.datetime.now().year, base_path=ROOT_DIR)
