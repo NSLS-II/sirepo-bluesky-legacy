@@ -51,6 +51,10 @@ class SirepoFlyer(BlueskyFlyer):
         self.return_status = {}
         self._copies = None
         self._srw_files = None
+    
+    def __repr__(self):
+        return (f'{self.name} with sim_code="{self.sim_code}" and '
+                f'sim_id="{self._sim_id}" at {self.server_name}')
 
     @property
     def sim_id(self):
@@ -304,7 +308,7 @@ if __name__ == '__main__':
         params_to_change.append({key1: parameters_update1,
                                  key2: parameters_update2})
 
-    sirepo_flyer = SirepoFlyer(sim_id='87XJ4oEb', server_name='http://10.10.10.10:8000',
+    sirepo_flyer = SirepoFlyer(sim_id='8cNnJ1ZF', server_name='http://10.10.10.10:8000',
                                params_to_change=params_to_change, watch_name='W60')
 
     # RE(bp.fly([sirepo_flyer]))
