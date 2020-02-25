@@ -25,14 +25,11 @@ bec = best_effort.BestEffortCallback()
 RE.subscribe(bec)
 
 # MongoDB backend:
-# db = Broker.named('local')  # mongodb backend
-# try:
-#     databroker.assets.utils.install_sentinels(db.reg.config, version=1)
-# except:
-#     pass
-
-# MongoDB backend:
-db = Broker.named('local')
+db = Broker.named('local')  # mongodb backend
+try:
+    databroker.assets.utils.install_sentinels(db.reg.config, version=1)
+except:
+    pass
 
 RE.subscribe(db.insert)
 db.reg.register_handler('srw', SRWFileHandler, overwrite=True)
