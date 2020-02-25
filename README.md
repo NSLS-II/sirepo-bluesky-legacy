@@ -5,7 +5,7 @@ An attempt to integrate Sirepo/SRW simulations with Bluesky/Ophyd.
 Based on this [Sirepo simulation](https://beta.sirepo.com/srw#/beamline/6JLvWbzP).
 
 
-Prepare local Sirepo server:
+Prepare a local Sirepo server:
 ----
 - install Sirepo using Vagrant/VirtualBox following the [instructions](https://github.com/radiasoft/sirepo/wiki/Development)
   (you will need to install [VirtualBox](https://www.virtualbox.org/) and 
@@ -13,7 +13,7 @@ Prepare local Sirepo server:
 - after the successful installation start the VM with `vagrant up` and ssh to
   it with `vagrant ssh`
 - run the following command to start Sirepo with the Bluesky interface (`bluesky` is a "secret" key used on both server and client sides, and the `SIREPO_FEATURE_CONFIG_SIM_TYPES=srw` part is optional if you run Sirepo directly on a Linux/Mac machine and only have SRW installed):
-```
+```bash
 SIREPO_FEATURE_CONFIG_SIM_TYPES=srw SIREPO_AUTH_METHODS=bluesky:guest SIREPO_AUTH_BLUESKY_SECRET=bluesky sirepo service http
 ```
 
@@ -24,6 +24,10 @@ SIREPO_FEATURE_CONFIG_SIM_TYPES=srw SIREPO_AUTH_METHODS=bluesky:guest SIREPO_AUT
 - grab the last 8 alphanumeric symbols (`IKROlKfR`), which represent a UID for
   the simulation we will be working with in the next section.
 
+You can also consider running a Docker container:
+```bash
+docker run -it --rm -e SIREPO_AUTH_METHODS=bluesky:guest -e SIREPO_AUTH_BLUESKY_SECRET=bluesky -e SIREPO_SRDB_ROOT=/sirepo -e SIREPO_COOKIE_IS_SECURE=false -p 8000:8000 -v $HOME/tmp/sirepo-docker-run:/sirepo radiasoft/sirepo:beta /home/vagrant/.pyenv/shims/sirepo service http
+```
 
 Prepare Bluesky and trigger a simulated Sirepo detector:
 ----
